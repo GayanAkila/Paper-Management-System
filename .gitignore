@@ -20,3 +20,4 @@ Thumbs.db
 .idea/
 backend/key.json
 
+frontend/src/firebase.ts
