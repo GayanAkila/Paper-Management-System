@@ -39,6 +39,7 @@ declare module "@mui/material/styles" {
   interface TypeBackground {
     lightBackground?: string;
     icon?: string;
+    mainText?:string;
   }
 
   interface PaletteOptions {
@@ -60,6 +61,7 @@ const theme = createTheme({
       paper: colors.primary[1000],
       lightBackground: colors.primary[1000],
       icon: colors.primary[100],
+      mainText:colors.primary[100],
     },
     text: {
       primary: colors.primary[100], // Primary text color
