@@ -11,7 +11,6 @@ import {
   alpha,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
-import logo from "../../../assets/images/logo.png";
 
 const HomeHeader = () => {
   const [prevScrollPos, setPrevScrollPos] = useState(window.pageYOffset);
@@ -120,7 +119,7 @@ const HomeHeader = () => {
               variant="contained"
               color="primary"
               component={RouterLink}
-              to="/register"
+              to="/auth"
               sx={{
                 transition: "all 0.3s ease-in-out",
                 transform: visible ? "scale(1)" : "scale(0.95)",
