@@ -37,52 +37,7 @@ import {
 import { useState } from "react";
 import { auth } from "../../firebase";
 import { signOut } from "firebase/auth";
-
-interface NavItem {
-  title: string;
-  path: string;
-  icon: React.ReactNode;
-  roles: string[];
-}
-
-const navItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    path: "/dashboard",
-    icon: <Dashboard />,
-    roles: ["user", "admin", "reviewer"],
-  },
-  {
-    title: "Profile",
-    path: "/profile",
-    icon: <Person />,
-    roles: ["user", "admin", "reviewer"],
-  },
-  {
-    title: "Events",
-    path: "/events",
-    icon: <EventNote />,
-    roles: ["user", "admin", "reviewer"],
-  },
-  {
-    title: "User Management",
-    path: "/users",
-    icon: <Group />,
-    roles: ["admin"],
-  },
-  {
-    title: "Settings",
-    path: "/settings",
-    icon: <Settings />,
-    roles: ["admin"],
-  },
-  {
-    title: "Content Management",
-    path: "/content",
-    icon: <Article />,
-    roles: ["admin", "reviewer"],
-  },
-];
+import { navItems } from "../NavItems";
 
 const AuthenticatedLayout = () => {
   const { user } = useAppSelector((state) => state.auth);

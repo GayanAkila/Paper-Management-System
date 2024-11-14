@@ -188,7 +188,6 @@ const SubmissionCard = ({
               bgcolor: getStatusColor(status),
               color: getStatusTextColor(status),
               fontWeight: 500,
-              borderRadius: 1,
               height: 24,
             }}
           />

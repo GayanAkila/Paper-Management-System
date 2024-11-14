@@ -1,4 +1,4 @@
-import { PaletteMode, Theme, ThemeOptions, alpha, createTheme } from "@mui/material";
+import { createTheme } from "@mui/material";
 
 // color design tokens export
 export const tokens = () => ({
@@ -30,7 +30,6 @@ export const tokens = () => ({
     1000: "#F6F9FE",
     1100: "#FCFDFF",
     1200: "#FFFFFF",
-
   },
 });
 
@@ -57,11 +56,10 @@ const theme = createTheme({
       main: colors.primary[100],
     },
     background: {
-      default: colors.primary[1200], 
+      default: colors.primary[1200],
       paper: colors.primary[1000],
       lightBackground: colors.primary[1000],
       icon: colors.primary[100],
-
     },
     text: {
       primary: colors.primary[100], // Primary text color
@@ -102,12 +100,30 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          boxShadow: "none",  
+          boxShadow: "none",
           textTransform: "none", // Removes uppercase transformation
           borderRadius: 24, // Adds border-radius to button
           "&:hover": {
             boxShadow: "none", // Disables box-shadow on hover
-          }
+          },
+        },
+      },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        "&::-webkit-scrollbar": {
+          width: "6px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "#f1f1f1",
+          borderRadius: "4px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "#888",
+          borderRadius: "4px",
+          "&:hover": {
+            background: "#666",
+          },
         },
       },
     },

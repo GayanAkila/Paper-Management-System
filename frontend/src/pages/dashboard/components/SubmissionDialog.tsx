@@ -17,7 +17,7 @@ import {
   Alert,
   Stack,
 } from "@mui/material";
-import { Close, Add, Remove } from "@mui/icons-material";
+import { Close, Add, Remove, Upload } from "@mui/icons-material";
 
 interface Author {
   name: string;
@@ -172,6 +172,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
                 variant="outlined"
                 component="span"
                 fullWidth
+                startIcon={<Upload />}
                 sx={{ height: 56 }}
               >
                 {file ? file.name : "Choose File"}

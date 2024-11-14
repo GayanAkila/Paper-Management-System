@@ -11,7 +11,7 @@ import Home from "./pages/home/Home";
 import Auth from "./pages/auth/Auth";
 import Dashboard from "./pages/dashboard";
 import AuthenticatedLayout from "./components/layout/AuthenticatedLayout";
-import LoadingScreen from "./components/LoadingScreen"; // You'll need to create this
+import LoadingScreen from "./components/LoadingScreen";
 import { useState } from "react";
 
 const App = () => {
