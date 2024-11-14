@@ -5,6 +5,7 @@ import { useAppSelector } from "../../store/store";
 import SubmissionDialog from "./components/SubmissionDialog";
 import SubmissionCard from "./components/SubmissionCard";
 import UploadIcon from "@mui/icons-material/Upload";
+import theme from "../../theme";
 
 // This interface should match your backend data structure
 interface Submission {
@@ -58,7 +59,7 @@ const Dashboard = () => {
           pt: 1,
         }}
       >
-        <Typography variant="h4">Dashboard</Typography>
+        <Typography variant="h4" sx= {{color:(theme)=>theme.palette.background.mainText}}>Dashboard</Typography>
         <Button
           variant="contained"
           color="primary"
