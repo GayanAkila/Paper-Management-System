@@ -218,6 +218,7 @@ const AuthenticatedLayout = () => {
           variant="permanent"
           sx={{
             width: 250,
+            height: `calc(100vh - 64px)`, // Full height minus AppBar
             flexShrink: 0,
             "& .MuiDrawer-paper": {
               width: 250,
@@ -248,17 +249,20 @@ const AuthenticatedLayout = () => {
                   sx={{
                     borderRadius: 1,
                     mb: 1,
-                    color: "#64748B",
+                    color: "#fff",
                     textDecoration: "none",
                     "&.active": {
-                      bgcolor: "#EFF6FF",
-                      color: "#2563EB",
+                      bgcolor: (theme) => theme.palette.background.navBar,
+                      color: (theme) => theme.palette.common.white,
                       "& .MuiListItemIcon-root": {
-                        color: "#2563EB",
+                        color: "#fff",
+                      },
+                      "& .MuiTypography-body1": {
+                        color: "#fff",
                       },
                     },
                     "&:hover": {
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "#DDECFE",
                     },
                   }}
                 >
@@ -275,6 +279,7 @@ const AuthenticatedLayout = () => {
                     primaryTypographyProps={{
                       fontSize: "0.95rem",
                       fontWeight: 500,
+                      // color: "#fff",
                     }}
                   />
                 </ListItem>

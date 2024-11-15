@@ -11,6 +11,9 @@ import {
   Logout,
   Article,
   Notifications,
+  Reviews,
+  CardMembership,
+  LocalPostOffice,
 } from "@mui/icons-material";
 
 export const navItems: NavItem[] = [
@@ -27,27 +30,51 @@ export const navItems: NavItem[] = [
     roles: ["user", "admin", "reviewer"],
   },
   {
-    title: "Events",
-    path: "/events",
-    icon: React.createElement(EventNote),
-    roles: ["admin", "reviewer"],
+    title: "Feedback Panel",
+    path: "/feedback-panel",
+    icon: React.createElement(Reviews),
+    roles: ["user", "admin", "reviewer"],
   },
   {
-    title: "User Management",
+    title: "Dashboard",
+    path: "/admin-dashboard",
+    icon: React.createElement(Dashboard),
+    roles: ["admin", "reviewer", "user"],
+  },
+  {
+    title: "Users",
     path: "/users",
     icon: React.createElement(Group),
-    roles: ["admin"],
+    roles: ["admin", "reviewer", "user"],
+  },
+  {
+    title: "Reviewers",
+    path: "/reviewers",
+    icon: React.createElement(Reviews),
+    roles: ["admin", "reviewer", "user"],
+  },
+  {
+    title: "Papers",
+    path: "/papers",
+    icon: React.createElement(Article),
+    roles: ["admin", "reviewer", "user"],
+  },
+  {
+    title: "Certificates",
+    path: "/certificates",
+    icon: React.createElement(CardMembership),
+    roles: ["admin", "reviewer", "user"],
+  },
+  {
+    title: "letters",
+    path: "/letters",
+    icon: React.createElement(LocalPostOffice),
+    roles: ["admin", "reviewer", "user"],
   },
   {
     title: "Settings",
     path: "/settings",
     icon: React.createElement(Settings),
-    roles: ["admin"],
-  },
-  {
-    title: "Content Management",
-    path: "/content",
-    icon: React.createElement(Article),
-    roles: ["admin", "reviewer"],
+    roles: ["admin", "reviewer", "user"],
   },
 ];

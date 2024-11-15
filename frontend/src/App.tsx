@@ -13,6 +13,15 @@ import Dashboard from "./pages/dashboard";
 import AuthenticatedLayout from "./components/layout/AuthenticatedLayout";
 import LoadingScreen from "./components/LoadingScreen";
 import { useState } from "react";
+import Profile from "./pages/profile";
+import FeedbackPanel from "./pages/feedbackPanel";
+import AdminDashboard from "./pages/adminDashboard";
+import Users from "./pages/userManagement";
+import Reviewers from "./pages/reviewerManagement";
+import Papers from "./pages/paperManagement";
+import Certificates from "./pages/certificates";
+import Letters from "./pages/letters";
+import Settings from "./pages/settings";
 
 const App = () => {
   const dispatch = useAppDispatch();
@@ -63,11 +72,15 @@ const App = () => {
       {/* Protected routes */}
       <Route element={<AuthenticatedLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<div>Profile Page</div>} />
-        <Route path="/events" element={<div>Events Page</div>} />
-        <Route path="/users" element={<div>User Management</div>} />
-        <Route path="/settings" element={<div>Settings</div>} />
-        <Route path="/content" element={<div>Content Management</div>} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/feedback-panel" element={<FeedbackPanel />} />
+        <Route path="/reviewers" element={<Reviewers />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/papers" element={<Papers />} />
+        <Route path="/certificates" element={<Certificates />} />
+        <Route path="/letters" element={<Letters />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
 
       {/* Catch all route */}

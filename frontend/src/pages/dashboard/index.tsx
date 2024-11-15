@@ -1,20 +1,19 @@
 // src/pages/dashboard/Dashboard.tsx
 import React, { useState } from "react";
-import { Box, Button, Grid, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Grid,
+  Paper,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useAppSelector } from "../../store/store";
 import SubmissionDialog from "./components/SubmissionDialog";
 import SubmissionCard from "./components/SubmissionCard";
 import UploadIcon from "@mui/icons-material/Upload";
-
-// This interface should match your backend data structure
-interface Submission {
-  id: string;
-  title: string;
-  type: "Research" | "Project";
-  status: "Pending" | "Approved" | "Rejected";
-  submittedOn: string;
-  feedback?: string;
-}
+import { Submission } from "../../types/types";
 
 const Dashboard = () => {
   const [openSubmissionDialog, setOpenSubmissionDialog] = useState(false);
@@ -25,9 +24,28 @@ const Dashboard = () => {
       id: "1",
       title: "The Impact of AI on Business Decision Making",
       type: "Research",
-      status: "Pending",
+      status: "approved",
       submittedOn: "01-Sep-2024",
+      feedback: {
+        comments: [
+          {
+            reviewer: "John Doe",
+            comment: "This is a good research topic.",
+            date: "02-Sep-2024",
+          },
+          {
+            reviewer: "Serena Williams",
+            comment: "Please provide more examples.",
+            date: "03-Sep-2024",
+          },
+        ],
+        document: {
+          name: "Research Paper",
+          url: "https://example.com/research-paper",
+        },
+      },
     },
+    
   ];
 
   const handleEdit = (id: string) => {
@@ -59,9 +77,11 @@ const Dashboard = () => {
         }}
       >
         <Typography variant="h4">Dashboard</Typography>
+
         <Button
           variant="contained"
           color="primary"
+          disabled={submissions.length >= 2}
           startIcon={<UploadIcon />}
           sx={{ height: 45, borderRadius: 1.5 }}
           onClick={() => setOpenSubmissionDialog(true)}
@@ -78,7 +98,7 @@ const Dashboard = () => {
           mt: 1,
         }}
       >
-        <Stack spacing={2} sx={{ pr: 1 }}>
+        <Stack spacing={2}>
           {submissions.map((submission) => (
             <SubmissionCard
               key={submission.id}
