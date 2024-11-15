@@ -14,17 +14,6 @@ import SubmissionDialog from "./components/SubmissionDialog";
 import SubmissionCard from "./components/SubmissionCard";
 import UploadIcon from "@mui/icons-material/Upload";
 import { Submission } from "../../types/types";
-import theme from "../../theme";
-
-// This interface should match your backend data structure
-interface Submission {
-  id: string;
-  title: string;
-  type: "Research" | "Project";
-  status: "Pending" | "Approved" | "Rejected";
-  submittedOn: string;
-  feedback?: string;
-}
 
 const Dashboard = () => {
   const [openSubmissionDialog, setOpenSubmissionDialog] = useState(false);
@@ -56,7 +45,6 @@ const Dashboard = () => {
         },
       },
     },
-    
   ];
 
   const handleEdit = (id: string) => {
