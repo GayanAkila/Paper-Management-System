@@ -119,11 +119,11 @@ const AuthenticatedLayout = () => {
           />
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton color="primary">
+            {/* <IconButton color="primary">
               <Badge badgeContent={4} color="error">
                 <Notifications />
               </Badge>
-            </IconButton>
+            </IconButton> */}
 
             <Chip
               onClick={handleMenu}

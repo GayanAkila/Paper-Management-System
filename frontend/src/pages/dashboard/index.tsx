@@ -1,55 +1,48 @@
 // src/pages/dashboard/Dashboard.tsx
-import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Grid,
-  Paper,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { useMemo, useState } from "react";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { useAppSelector } from "../../store/store";
 import SubmissionDialog from "./components/SubmissionDialog";
 import SubmissionCard from "./components/SubmissionCard";
 import UploadIcon from "@mui/icons-material/Upload";
-import { Submission } from "../../types/types";
+import { Author, Submission, SubmissionType } from "../../types/types";
+import { submissionsData } from "../../tempData";
 
 const Dashboard = () => {
-  const [openSubmissionDialog, setOpenSubmissionDialog] = useState(false);
+  const user = useAppSelector((state) => state.auth.user);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [mode, setMode] = useState<"create" | "edit">("create");
+  const [selectedSubmission, setSelectedSubmission] = useState<
+    Submission | undefined
+  >();
 
-  // Example submissions data - replace with actual data from your backend
-  const submissions: Submission[] = [
-    {
-      id: "1",
-      title: "The Impact of AI on Business Decision Making",
-      type: "Research",
-      status: "approved",
-      submittedOn: "01-Sep-2024",
-      feedback: {
-        comments: [
-          {
-            reviewer: "John Doe",
-            comment: "This is a good research topic.",
-            date: "02-Sep-2024",
-          },
-          {
-            reviewer: "Serena Williams",
-            comment: "Please provide more examples.",
-            date: "03-Sep-2024",
-          },
-        ],
-        document: {
-          name: "Research Paper",
-          url: "https://example.com/research-paper",
-        },
-      },
-    },
-  ];
+  const userSubmissions = useMemo(
+    () =>
+      submissionsData.filter(
+        (submission) => submission.studentEmail === user?.email
+      ),
+    [user?.email, submissionsData]
+  );
 
-  const handleEdit = (id: string) => {
-    // Implement edit functionality
-    console.log("Edit submission:", id);
+  const handleSubmit = (data: {
+    type: string;
+    title: string;
+    file?: File;
+    authors: Author[];
+  }) => {
+    if (mode === "create") {
+      // Handle creation
+      console.log("Creating new submission:", data);
+    } else {
+      // Handle editing
+      console.log("Updating submission:", data);
+    }
+  };
+
+  const handleEdit = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setMode("edit");
+    setDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -80,10 +73,14 @@ const Dashboard = () => {
         <Button
           variant="contained"
           color="primary"
-          disabled={submissions.length >= 2}
+          // disabled={userSubmissions.length >= 2}
           startIcon={<UploadIcon />}
           sx={{ height: 45, borderRadius: 1.5 }}
-          onClick={() => setOpenSubmissionDialog(true)}
+          onClick={() => {
+            setMode("create");
+            setSelectedSubmission(undefined);
+            setDialogOpen(true);
+          }}
         >
           Upload the file
         </Button>
@@ -98,11 +95,11 @@ const Dashboard = () => {
         }}
       >
         <Stack spacing={2}>
-          {submissions.map((submission) => (
+          {userSubmissions.map((submission) => (
             <SubmissionCard
               key={submission.id}
-              {...submission}
-              onEdit={() => handleEdit(submission.id)}
+              submission={submission}
+              onEdit={() => handleEdit(submission)}
               onDelete={() => handleDelete(submission.id)}
             />
           ))}
@@ -110,8 +107,11 @@ const Dashboard = () => {
       </Box>
 
       <SubmissionDialog
-        open={openSubmissionDialog}
-        onClose={() => setOpenSubmissionDialog(false)}
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        mode={mode}
+        initialData={selectedSubmission}
+        onSubmit={handleSubmit}
       />
     </Box>
   );

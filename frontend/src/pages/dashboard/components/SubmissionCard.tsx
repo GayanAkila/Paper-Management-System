@@ -16,8 +16,9 @@ import {
   Link,
   List,
   ListItem,
-  ListItemText,
   Button,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 import {
   MoreVert as MoreVertIcon,
@@ -25,39 +26,19 @@ import {
   Delete as DeleteIcon,
   Description as DocumentIcon,
   Close as CloseIcon,
+  Download as DownloadIcon,
+  OpenInNew as OpenInNewIcon,
 } from "@mui/icons-material";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { Feedback, Status } from "../../../types/types";
+import { Submission } from "../../../types/types";
 
 interface SubmissionCardProps {
-  id: string;
-  title: string;
-  type: "Research" | "Project";
-  status:
-    | "pending"
-    | "approved"
-    | "rejected"
-    | "approved with changes"
-    | "under review";
-  submittedOn: string;
-  feedback?: {
-    comments: Feedback[];
-    document?: {
-      name: string;
-      url: string;
-    };
-  };
+  submission: Submission;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
 const SubmissionCard = ({
-  id,
-  title,
-  type,
-  status,
-  submittedOn,
-  feedback,
+  submission,
   onEdit,
   onDelete,
 }: SubmissionCardProps) => {
@@ -82,15 +63,15 @@ const SubmissionCard = ({
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case Status.pending:
+      case "pending":
         return "#EDEDFF";
-      case Status.approved:
+      case "approved":
         return "#DEF8EE";
-      case Status.rejected:
+      case "rejected":
         return "rgba(28, 28, 28, 0.05)";
-      case Status.approvedWithChanges:
+      case "approved with changes":
         return "#FFFBD4";
-      case Status.underReview:
+      case "under review":
         return "#E2F5FF";
       default:
         return "#EFF6FF";
@@ -99,15 +80,15 @@ const SubmissionCard = ({
 
   const getStatusTextColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case Status.pending:
+      case "pending":
         return "#8A8CD9";
-      case Status.approved:
+      case "approved":
         return "#4AA785";
-      case Status.rejected:
+      case "rejected":
         return "rgba(28, 28, 28, 0.4)";
-      case Status.approvedWithChanges:
+      case "approved with changes":
         return "#FFC555";
-      case Status.underReview:
+      case "under review":
         return "#59A8D4";
       default:
         return "#EFF6FF";
@@ -139,7 +120,7 @@ const SubmissionCard = ({
               flex: 1,
             }}
           >
-            {title}
+            {submission.title}
           </Typography>
 
           <IconButton
@@ -158,12 +139,23 @@ const SubmissionCard = ({
               elevation: 0,
               sx: {
                 filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.1))",
-                width: 128,
+                width: 140,
               },
             }}
             transformOrigin={{ horizontal: "right", vertical: "top" }}
             anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           >
+            <MenuItem
+              onClick={() => {
+                window.open(submission.document!, "_blank");
+                handleMenuClose();
+              }}
+            >
+              <ListItemIcon>
+                <DownloadIcon fontSize="small" />
+              </ListItemIcon>
+              Download
+            </MenuItem>
             <MenuItem
               onClick={() => {
                 onEdit?.();
@@ -191,6 +183,49 @@ const SubmissionCard = ({
         </Box>
         <Divider sx={{ mb: 2 }} />
         <Stack spacing={0.5}>
+          {/* Authors Section */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 2,
+              borderRadius: 1,
+              p: 1,
+              bgcolor: "white",
+            }}
+          >
+            <Typography color="text.secondary" sx={{ width: 100 }}>
+              Authors
+            </Typography>
+            <Stack spacing={1} display={"flex"} direction={"row"}>
+              {submission.authors.map((author, index) => (
+                <Tooltip key={index} title={author.email} arrow>
+                  <Chip
+                    size="small"
+                    key={index}
+                    avatar={
+                      <Avatar
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          fontSize: "0.75rem",
+                          bgcolor: "#fff",
+                        }}
+                      >
+                        {author.name.charAt(0)}
+                      </Avatar>
+                    }
+                    label={
+                      <Typography variant="body2">{author.name}</Typography>
+                    }
+                    sx={{ margin: 0.5 }}
+                  />
+                </Tooltip>
+              ))}
+            </Stack>
+          </Box>
+
+          {/* Type Section */}
           <Box
             sx={{
               display: "flex",
@@ -205,10 +240,11 @@ const SubmissionCard = ({
               Type
             </Typography>
             <Typography color="text.primary" fontWeight={500}>
-              {type}
+              {submission.type}
             </Typography>
           </Box>
 
+          {/* Status Section */}
           <Box
             sx={{
               display: "flex",
@@ -223,16 +259,17 @@ const SubmissionCard = ({
               Status
             </Typography>
             <Chip
-              label={status}
+              label={submission.status}
               sx={{
-                bgcolor: getStatusColor(status),
-                color: getStatusTextColor(status),
+                bgcolor: getStatusColor(submission.status),
+                color: getStatusTextColor(submission.status),
                 fontWeight: 500,
                 height: 24,
               }}
             />
           </Box>
 
+          {/* Submission Date */}
           <Box
             sx={{
               display: "flex",
@@ -246,9 +283,12 @@ const SubmissionCard = ({
             <Typography color="text.secondary" sx={{ width: 100 }}>
               Submitted on
             </Typography>
-            <Typography color="text.primary">{submittedOn}</Typography>
+            <Typography color="text.primary">
+              {submission.submittedOn}
+            </Typography>
           </Box>
 
+          {/* Feedback Section */}
           <Box
             sx={{
               display: "flex",
@@ -262,24 +302,23 @@ const SubmissionCard = ({
             <Typography color="text.secondary" sx={{ width: 100 }}>
               Feedback
             </Typography>
-            {feedback?.comments ? (
+            {submission.feedback?.comments?.length ?? 0 > 0 ? (
               <Link
                 component="button"
                 onClick={handleFeedbackClick}
                 sx={{
                   textDecoration: "none",
                   color: "primary.main",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
                   "&:hover": {
                     textDecoration: "underline",
                   },
                 }}
               >
                 View Feedback
-                <OpenInNewIcon
-                  color="inherit"
-                  fontSize="small"
-                  sx={{ ml: 1 }}
-                />
+                <OpenInNewIcon fontSize="small" />
               </Link>
             ) : (
               <Typography color="text.secondary" fontStyle="italic">
@@ -303,25 +342,32 @@ const SubmissionCard = ({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              alignContent: "center",
             }}
           >
-            <Typography variant="h6">Reviewer Feedback</Typography>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 500 }}>
+                Reviewer Feedback
+              </Typography>
+            </Box>
             <IconButton onClick={handleFeedbackClose} size="small">
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
+        <Divider />
         <DialogContent>
           <List sx={{ mb: 2 }}>
-            {feedback?.comments.map((comment, index) => (
+            {submission.feedback?.comments.map((comment, index) => (
               <ListItem
                 key={index}
                 sx={{
                   flexDirection: "column",
                   alignItems: "flex-start",
-                  bgcolor: "background.paper",
+                  bgcolor: (theme) => theme.palette.background.default,
                   borderRadius: 1,
-                  mb: 1,
+                  mb: 2,
+                  p: 2,
                 }}
               >
                 <Box
@@ -332,45 +378,44 @@ const SubmissionCard = ({
                     mb: 1,
                   }}
                 >
-                  <Typography variant="subtitle2" color="primary">
+                  <Typography
+                    variant="subtitle2"
+                    color="primary"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: "0.75rem",
+                        bgcolor: "primary.main",
+                      }}
+                    >
+                      {comment.reviewer.charAt(0)}
+                    </Avatar>
                     {comment.reviewer}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {comment.date}
                   </Typography>
                 </Box>
-                <Typography variant="body2">{comment.comment}</Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  {comment.comment}
+                </Typography>
+                {comment.document && (
+                  <Button
+                    startIcon={<DocumentIcon />}
+                    variant="outlined"
+                    size="small"
+                    onClick={() => window.open(comment.document!, "_blank")}
+                    sx={{ textTransform: "none" }}
+                  >
+                    View Review Document
+                  </Button>
+                )}
               </ListItem>
             ))}
           </List>
-
-          {feedback?.document && (
-            <Box
-              sx={{
-                mt: 2,
-                p: 2,
-                bgcolor: "background.paper",
-                borderRadius: 1,
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <DocumentIcon color="primary" />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2">
-                  {feedback.document.name}
-                </Typography>
-              </Box>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => window.open(feedback?.document?.url, "_blank")}
-              >
-                View
-              </Button>
-            </Box>
-          )}
         </DialogContent>
       </Dialog>
     </>

@@ -1,8 +1,6 @@
 import {
   Box,
   Typography,
-  Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -10,16 +8,13 @@ import {
   Button,
   TextField,
   FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Input,
   IconButton as MuiIconButton,
   Stack,
   InputLabel,
   MenuItem,
   Select,
+  Alert,
+  Divider,
 } from "@mui/material";
 import {
   Download as DownloadIcon,
@@ -28,7 +23,8 @@ import {
   AttachFile as AttachFileIcon,
 } from "@mui/icons-material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Submission } from "../../../types/types";
 
 interface ReviewDialogProps {
   open: boolean;
@@ -38,18 +34,41 @@ interface ReviewDialogProps {
     decision: string;
     file?: File;
   }) => void;
-  submissionTopic: string;
+  submission: Submission;
+  currentReviewer: string;
 }
 
 const ReviewDialog = ({
   open,
   onClose,
   onSubmit,
-  submissionTopic,
+  submission,
+  currentReviewer,
 }: ReviewDialogProps) => {
   const [comment, setComment] = useState("");
   const [decision, setDecision] = useState("");
   const [file, setFile] = useState<File | null>(null);
+
+  // Get current reviewer's feedback if exists
+  const currentReviewerFeedback = useMemo(
+    () =>
+      submission.feedback?.comments.find(
+        (comment) => comment.reviewer === currentReviewer
+      ),
+    [submission, currentReviewer]
+  );
+
+  useEffect(() => {
+    if (open && currentReviewerFeedback) {
+      setComment(currentReviewerFeedback.comment);
+      setDecision(submission.feedback?.finalDecision || "");
+      setFile(null);
+    } else {
+      setComment("");
+      setDecision("");
+      setFile(null);
+    }
+  }, [open, currentReviewerFeedback, submission.feedback?.finalDecision]);
 
   const handleSubmit = () => {
     if (!comment || !decision) return;
@@ -69,7 +88,13 @@ const ReviewDialog = ({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+      const selectedFile = event.target.files[0];
+      if (selectedFile.type === "application/pdf") {
+        setFile(selectedFile);
+      } else {
+        // Show error for invalid file type
+        alert("Please upload only PDF files");
+      }
     }
   };
 
@@ -90,7 +115,7 @@ const ReviewDialog = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid #E2E8F0",
+
           p: 2,
         }}
       >
@@ -101,13 +126,34 @@ const ReviewDialog = ({
           <CloseIcon />
         </MuiIconButton>
       </DialogTitle>
-
+      <Divider />
       <DialogContent sx={{ p: 3 }}>
-        <Stack spacing={3} sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" color="text.secondary">
-            Reviewing: {submissionTopic}
-          </Typography>
+        <Stack spacing={3}>
+          {/* Show existing feedback if available */}
+          {currentReviewerFeedback && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="subtitle2">Your Previous Review:</Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {currentReviewerFeedback.comment}
+              </Typography>
+              {currentReviewerFeedback.document && (
+                <Button
+                  startIcon={<DownloadIcon />}
+                  size="small"
+                  onClick={() => {
+                    if (currentReviewerFeedback.document) {
+                      window.open(currentReviewerFeedback.document, "_blank");
+                    }
+                  }}
+                  sx={{ mt: 1 }}
+                >
+                  View Previous Attachment
+                </Button>
+              )}
+            </Alert>
+          )}
 
+          {/* Review Form */}
           <TextField
             label="Review Comments"
             multiline
@@ -126,7 +172,7 @@ const ReviewDialog = ({
               onChange={(e) => setDecision(e.target.value)}
               label="Final Decision"
             >
-              <MenuItem value="Approved">Approve</MenuItem>{" "}
+              <MenuItem value="Approved">Approve</MenuItem>
               <MenuItem value="Approved with changes">
                 Approve with Changes
               </MenuItem>
@@ -135,10 +181,11 @@ const ReviewDialog = ({
           </FormControl>
 
           <Box>
-            <Input
-              type="file"
+            <input
+              accept="application/pdf"
               id="file-input"
-              sx={{ display: "none" }}
+              type="file"
+              hidden
               onChange={handleFileChange}
             />
             <label htmlFor="file-input">

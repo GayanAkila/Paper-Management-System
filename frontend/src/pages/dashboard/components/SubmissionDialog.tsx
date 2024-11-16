@@ -1,5 +1,4 @@
-// src/components/SubmissionDialog/SubmissionDialog.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -16,43 +15,78 @@ import {
   IconButton,
   Alert,
   Stack,
+  Divider,
 } from "@mui/material";
 import { Close, Add, Remove, Upload } from "@mui/icons-material";
-
-interface Author {
-  name: string;
-  email: string;
-}
+import { Author, Submission, SubmissionType } from "../../../types/types";
 
 interface SubmissionDialogProps {
   open: boolean;
   onClose: () => void;
+  mode: "create" | "edit";
+  initialData?: Submission;
+  onSubmit: (data: {
+    type: string;
+    title: string;
+    file?: File;
+    authors: Author[];
+  }) => void;
 }
 
 const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
   open,
   onClose,
+  mode,
+  initialData,
+  onSubmit,
 }) => {
-  const [type, setType] = useState<"research" | "project">("research");
+  const [type, setType] = useState<string>(SubmissionType.research);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [authors, setAuthors] = useState<Author[]>([{ name: "", email: "" }]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [currentFileName, setCurrentFileName] = useState<string>("");
+
+  // Initialize form with data when editing
+  useEffect(() => {
+    if (mode === "edit" && initialData) {
+      // Set type by matching the exact string
+      setType(initialData.type);
+      setTitle(initialData.title);
+      setAuthors(initialData.authors);
+      if (initialData.document) {
+        setCurrentFileName(initialData.document.split("/").pop() || "");
+      }
+    } else {
+      // Reset form for create mode
+      setType(SubmissionType.research);
+      setTitle("");
+      setFile(null);
+      setAuthors([{ name: "", email: "" }]);
+      setCurrentFileName("");
+    }
+    // Reset errors when dialog opens/closes
+    setErrors({});
+  }, [mode, initialData, open]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
       if (selectedFile.type === "application/pdf") {
         setFile(selectedFile);
+        setCurrentFileName(selectedFile.name);
         setErrors((prev) => ({ ...prev, file: "" }));
       } else {
         setFile(null);
+        setCurrentFileName("");
         setErrors((prev) => ({
           ...prev,
           file: "Please upload a PDF file only",
         }));
       }
     }
+    // Reset the input value to allow selecting the same file again
+    event.target.value = "";
   };
 
   const handleAddAuthor = () => {
@@ -65,6 +99,12 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
     if (authors.length > 1) {
       const newAuthors = authors.filter((_, i) => i !== index);
       setAuthors(newAuthors);
+
+      // Clear errors for removed author
+      const newErrors = { ...errors };
+      delete newErrors[`author${index}Name`];
+      delete newErrors[`author${index}Email`];
+      setErrors(newErrors);
     }
   };
 
@@ -76,21 +116,36 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
     const newAuthors = [...authors];
     newAuthors[index] = { ...newAuthors[index], [field]: value };
     setAuthors(newAuthors);
+
+    // Clear error for the field being edited
+    if (
+      errors[`author${index}${field.charAt(0).toUpperCase() + field.slice(1)}`]
+    ) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[
+          `author${index}${field.charAt(0).toUpperCase() + field.slice(1)}`
+        ];
+        return newErrors;
+      });
+    }
   };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!title) newErrors.title = "Title is required";
-    if (!file) newErrors.file = "File is required";
+    if (!title.trim()) newErrors.title = "Title is required";
+    if (!currentFileName && !file && mode === "create") {
+      newErrors.file = "File is required";
+    }
     if (!type) newErrors.type = "Type is required";
 
     authors.forEach((author, index) => {
-      if (!author.name)
+      if (!author.name.trim())
         newErrors[`author${index}Name`] = "Author name is required";
-      if (!author.email)
+      if (!author.email.trim())
         newErrors[`author${index}Email`] = "Author email is required";
-      else if (!/\S+@\S+\.\S+/.test(author.email)) {
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(author.email)) {
         newErrors[`author${index}Email`] = "Invalid email format";
       }
     });
@@ -99,18 +154,32 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleClose = () => {
+    setErrors({});
+    onClose();
+  };
+
   const handleSubmit = async () => {
     if (validateForm()) {
-      // TODO: Implement your submission logic here
-      console.log({ type, title, file, authors });
-      onClose();
+      onSubmit({
+        type,
+        title: title.trim(),
+        file: file || undefined,
+        authors: authors.map((author) => ({
+          name: author.name.trim(),
+          email: author.email.trim(),
+        })),
+      });
+      handleClose();
     }
   };
+
+  const isProject = type === SubmissionType.project;
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="md"
       fullWidth
       PaperProps={{
@@ -122,28 +191,30 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          p: 2,
         }}
       >
-        Submit Paper
-        <IconButton onClick={onClose}>
+        <Typography variant="h6">
+          {mode === "create" ? "Submit Paper" : "Edit Paper"}
+        </Typography>
+        <IconButton onClick={handleClose} size="small">
           <Close />
         </IconButton>
       </DialogTitle>
-
-      <DialogContent dividers>
+      <Divider />
+      <DialogContent sx={{ p: 3 }}>
         <Stack spacing={3}>
-          <FormControl fullWidth>
+          <FormControl fullWidth error={!!errors.type}>
             <InputLabel>Type</InputLabel>
             <Select
               value={type}
               label="Type"
-              onChange={(e) =>
-                setType(e.target.value as "research" | "project")
-              }
-              error={!!errors.type}
+              onChange={(e) => setType(e.target.value)}
             >
-              <MenuItem value="research">Research Paper</MenuItem>
-              <MenuItem value="project">Project</MenuItem>
+              <MenuItem value={SubmissionType.research}>
+                Research Paper
+              </MenuItem>
+              <MenuItem value={SubmissionType.project}>Project Paper</MenuItem>
             </Select>
           </FormControl>
 
@@ -151,15 +222,31 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
             label="Paper Title"
             fullWidth
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (errors.title) {
+                setErrors((prev) => {
+                  const newErrors = { ...prev };
+                  delete newErrors.title;
+                  return newErrors;
+                });
+              }
+            }}
             error={!!errors.title}
             helperText={errors.title}
           />
 
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Upload Paper (PDF only)
+              {mode === "edit"
+                ? "Update Paper (PDF only)"
+                : "Upload Paper (PDF only)"}
             </Typography>
+            {currentFileName && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Current file: {currentFileName}
+              </Alert>
+            )}
             <input
               accept="application/pdf"
               id="file-upload"
@@ -173,13 +260,17 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
                 component="span"
                 fullWidth
                 startIcon={<Upload />}
-                sx={{ height: 56 }}
+                sx={{ height: 56, borderRadius: 1.5 }}
               >
                 {file ? file.name : "Choose File"}
               </Button>
             </label>
             {errors.file && (
-              <Typography color="error" variant="caption">
+              <Typography
+                color="error"
+                variant="caption"
+                sx={{ mt: 1, display: "block" }}
+              >
                 {errors.file}
               </Typography>
             )}
@@ -195,10 +286,14 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
               }}
             >
               <Typography variant="subtitle2">
-                {type === "project" ? "Authors(max 3)" : "Author"}
+                {isProject ? "Authors (max 3)" : "Author"}
               </Typography>
-              {type === "project" && authors.length < 3 && (
-                <Button startIcon={<Add />} onClick={handleAddAuthor}>
+              {isProject && authors.length < 3 && (
+                <Button
+                  startIcon={<Add />}
+                  onClick={handleAddAuthor}
+                  size="small"
+                >
                   Add Author
                 </Button>
               )}
@@ -229,7 +324,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
                       helperText={errors[`author${index}Email`]}
                     />
                   </Stack>
-                  {type === "project" && authors.length > 1 && (
+                  {isProject && authors.length > 1 && (
                     <IconButton
                       onClick={() => handleRemoveAuthor(index)}
                       color="error"
@@ -246,11 +341,19 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3 }}>
-        <Button onClick={onClose} variant="outlined">
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          sx={{ borderRadius: 1.5 }}
+        >
           Cancel
         </Button>
-        <Button onClick={handleSubmit} variant="contained">
-          Submit
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          sx={{ borderRadius: 1.5 }}
+        >
+          {mode === "create" ? "Submit" : "Save Changes"}
         </Button>
       </DialogActions>
     </Dialog>

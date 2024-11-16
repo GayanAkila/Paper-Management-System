@@ -1,8 +1,7 @@
 import { Box, Typography, Chip, IconButton } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
-import EditIcon from "@mui/icons-material/Edit";
 import ReviewIcon from "@mui/icons-material/RateReview";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ReviewDialog from "./components/ReviewDialog";
 import {
   DataGrid,
@@ -10,113 +9,30 @@ import {
   GridRenderCellParams,
   GridToolbar,
 } from "@mui/x-data-grid";
-
-export const submissionsData = [
-  {
-    id: "1",
-    topic: "AI in UX Design",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "2",
-    topic: "Machine Learning Applications in Healthcare",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "3",
-    topic: "Blockchain Technology in Supply Chain",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "4",
-    topic: "Impact of IoT on Smart Cities",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "5",
-    topic: "Data Analytics in Business Decision Making",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Approved with changes",
-  },
-  {
-    id: "6",
-    topic: "Cloud Computing Security Challenges",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Approved",
-  },
-  {
-    id: "7",
-    topic: "Ethics in Artificial Intelligence",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "8",
-    topic: "Virtual Reality in Education",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "9",
-    topic: "5G Networks and Their Applications",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Approved with changes",
-  },
-  {
-    id: "10",
-    topic: "Cybersecurity in Remote Work",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Approved",
-  },
-  {
-    id: "11",
-    topic: "Big Data Analytics in Healthcare",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "12",
-    topic: "Digital Transformation Strategies",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Pending",
-  },
-  {
-    id: "13",
-    topic: "Quantum Computing Applications",
-    type: "Research Paper",
-    submissionDate: "01-Sep-2024",
-    status: "Approved with changes",
-  },
-];
+import { submissionsData } from "../../tempData";
+import { Submission } from "../../types/types";
+import { useAppSelector } from "../../store/store";
 
 const FeedbackPanel = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<string | null>(
-    null
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<Submission | null>(null);
+  const user = useAppSelector((state) => state.auth.user);
+
+  const reviewerPapers = useMemo(
+    () =>
+      submissionsData.filter((submission) =>
+        submission.reviewerEmail.includes(user?.email as string)
+      ),
+    [user?.email, submissionsData]
   );
 
   const onDownload = (id: string) => {
     console.log(`Downloading item with id: ${id}`);
   };
 
-  const handleReviewClick = (id: string, topic: string) => {
-    setSelectedSubmission(topic);
+  const handleReviewClick = (submission: Submission) => {
+    setSelectedSubmission(submission);
     setReviewDialogOpen(true);
   };
 
@@ -178,7 +94,7 @@ const FeedbackPanel = () => {
 
   const columns: GridColDef[] = [
     {
-      field: "topic",
+      field: "title",
       headerName: "Topic",
       flex: 2,
       headerClassName: "datagrid-header",
@@ -190,7 +106,7 @@ const FeedbackPanel = () => {
       headerClassName: "datagrid-header",
     },
     {
-      field: "submissionDate",
+      field: "submittedOn",
       headerName: "Submission Date",
       headerAlign: "center",
       align: "center",
@@ -234,7 +150,7 @@ const FeedbackPanel = () => {
           </IconButton>
           <IconButton
             size="small"
-            onClick={() => handleReviewClick(params.row.id, params.row.topic)}
+            onClick={() => handleReviewClick(params.row)}
             sx={{ color: (theme) => theme.palette.background.icon }}
           >
             <ReviewIcon fontSize="small" />
@@ -245,12 +161,14 @@ const FeedbackPanel = () => {
   ];
 
   return (
-    <Box sx={{ height: "100%" }}>
-      <Typography variant="h4">Feedback Panel</Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Typography variant="h4" sx={{ mb: 1 }}>
+        Feedback Panel
+      </Typography>
 
       <Box
         sx={{
-          height: "95%",
+          height: "100%",
           overflowY: "hidden",
           "& .MuiDataGrid-root": {
             border: "none",
@@ -263,7 +181,7 @@ const FeedbackPanel = () => {
         }}
       >
         <DataGrid
-          rows={submissionsData}
+          rows={reviewerPapers}
           columns={columns}
           pageSizeOptions={[10, 25, 50]}
           initialState={{
@@ -286,13 +204,15 @@ const FeedbackPanel = () => {
           }}
         />
       </Box>
-
-      <ReviewDialog
-        open={reviewDialogOpen}
-        onClose={() => setReviewDialogOpen(false)}
-        onSubmit={handleReviewSubmit}
-        submissionTopic={selectedSubmission || ""}
-      />
+      {selectedSubmission && user && (
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onClose={() => setReviewDialogOpen(false)}
+          onSubmit={handleReviewSubmit}
+          submission={selectedSubmission}
+          currentReviewer={user?.email}
+        />
+      )}
     </Box>
   );
 };

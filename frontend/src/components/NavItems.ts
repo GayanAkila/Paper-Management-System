@@ -48,12 +48,6 @@ export const navItems: NavItem[] = [
     roles: ["admin", "reviewer", "user"],
   },
   {
-    title: "Reviewers",
-    path: "/reviewers",
-    icon: React.createElement(Reviews),
-    roles: ["admin", "reviewer", "user"],
-  },
-  {
     title: "Papers",
     path: "/papers",
     icon: React.createElement(Article),

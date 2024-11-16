@@ -17,7 +17,6 @@ import Profile from "./pages/profile";
 import FeedbackPanel from "./pages/feedbackPanel";
 import AdminDashboard from "./pages/adminDashboard";
 import Users from "./pages/userManagement";
-import Reviewers from "./pages/reviewerManagement";
 import Papers from "./pages/paperManagement";
 import Certificates from "./pages/certificates";
 import Letters from "./pages/letters";
@@ -75,7 +74,6 @@ const App = () => {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/feedback-panel" element={<FeedbackPanel />} />
-        <Route path="/reviewers" element={<Reviewers />} />
         <Route path="/users" element={<Users />} />
         <Route path="/papers" element={<Papers />} />
         <Route path="/certificates" element={<Certificates />} />
