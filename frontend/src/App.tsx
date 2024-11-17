@@ -1,18 +1,18 @@
-// src/App.tsx
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
-import { useAppDispatch } from "./store/store";
-import { auth } from "./firebase";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "./store/store";
+import { auth, db } from "./config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { login, logout } from "./store/slices/authSlice";
+import { login, logout, setLoading } from "./store/slices/authSlice";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { UserProfile, UserRole } from "./types/types";
+
+// Components
 import Home from "./pages/home/Home";
 import Auth from "./pages/auth/Auth";
 import Dashboard from "./pages/dashboard";
 import AuthenticatedLayout from "./components/layout/AuthenticatedLayout";
 import LoadingScreen from "./components/LoadingScreen";
-import { useState } from "react";
 import Profile from "./pages/profile";
 import FeedbackPanel from "./pages/feedbackPanel";
 import AdminDashboard from "./pages/adminDashboard";
@@ -22,39 +22,134 @@ import Certificates from "./pages/certificates";
 import Letters from "./pages/letters";
 import Settings from "./pages/settings";
 
+// Route configuration with role-based access
+const routes = [
+  {
+    path: "/dashboard",
+    element: <Dashboard />,
+    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
+  },
+  {
+    path: "/admin-dashboard",
+    element: <AdminDashboard />,
+    roles: [UserRole.ADMIN],
+  },
+  {
+    path: "/profile",
+    element: <Profile />,
+    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
+  },
+  {
+    path: "/feedback-panel",
+    element: <FeedbackPanel />,
+    roles: [UserRole.ADMIN, UserRole.REVIEWER],
+  },
+  {
+    path: "/users",
+    element: <Users />,
+    roles: [UserRole.ADMIN],
+  },
+  {
+    path: "/papers",
+    element: <Papers />,
+    roles: [UserRole.ADMIN, UserRole.REVIEWER],
+  },
+  {
+    path: "/certificates",
+    element: <Certificates />,
+    roles: [UserRole.ADMIN, UserRole.STUDENT],
+  },
+  {
+    path: "/letters",
+    element: <Letters />,
+    roles: [UserRole.ADMIN, UserRole.STUDENT],
+  },
+  {
+    path: "/settings",
+    element: <Settings />,
+    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
+  },
+];
+
+const getDefaultRoute = (role?: UserRole): string => {
+  switch (role) {
+    case UserRole.ADMIN:
+      return "/admin-dashboard";
+    case UserRole.REVIEWER:
+      return "/feedback-panel";
+    case UserRole.STUDENT:
+      return "/dashboard";
+    default:
+      console.warn("No role or unknown role, defaulting to /dashboard");
+      return "/dashboard";
+  }
+};
+
+const ProtectedRoute = ({
+  element,
+  roles,
+}: {
+  element: JSX.Element;
+  roles: UserRole[];
+}) => {
+  const { user, loading } = useAppSelector((state) => state.auth);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (!roles.includes(user.role)) {
+    console.log("Role mismatch - redirecting to:", getDefaultRoute(user.role));
+    return <Navigate to={getDefaultRoute(user.role)} replace />;
+  }
+
+  return element;
+};
+
 const App = () => {
   const dispatch = useAppDispatch();
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useAppSelector((state) => state.auth);
+  const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    dispatch(setLoading(true));
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        if (user) {
-          // Get user data from Firestore
-          const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (firebaseUser) {
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+
+          if (!userDoc.exists()) {
+            dispatch(logout());
+            return;
+          }
+
           const userData = userDoc.data();
 
-          dispatch(
-            login({
-              email: user.email!,
-              id: user.uid,
-              photoUrl: user.photoURL || null,
-              role: userData?.role || "user",
-              displayName: user.displayName || undefined,
-            })
-          );
+          const userProfile: UserProfile = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email!,
+            displayName: firebaseUser.displayName || undefined,
+            photoURL: firebaseUser.photoURL,
+            role: userData.role || UserRole.STUDENT,
+            createdAt: userData.createdAt,
+            updatedAt: userData.updatedAt,
+          };
+
+          dispatch(login(userProfile));
         } else {
           dispatch(logout());
         }
       } catch (error) {
         console.error("Error syncing auth state:", error);
         dispatch(logout());
-      } finally {
-        setLoading(false);
       }
     });
 
-    // Cleanup subscription
     return () => unsubscribe();
   }, [dispatch]);
 
@@ -62,27 +157,41 @@ const App = () => {
     return <LoadingScreen />;
   }
 
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<Home />} />
-      <Route path="/auth" element={<Auth />} />
+      <Route
+        path="/"
+        element={<Navigate to={getDefaultRoute(user.role)} replace />}
+      />
+      <Route
+        path="/auth"
+        element={<Navigate to={getDefaultRoute(user.role)} replace />}
+      />
 
-      {/* Protected routes */}
       <Route element={<AuthenticatedLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/feedback-panel" element={<FeedbackPanel />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/papers" element={<Papers />} />
-        <Route path="/certificates" element={<Certificates />} />
-        <Route path="/letters" element={<Letters />} />
-        <Route path="/settings" element={<Settings />} />
+        {routes.map(({ path, element, roles }) => (
+          <Route
+            key={path}
+            path={path}
+            element={<ProtectedRoute element={element} roles={roles} />}
+          />
+        ))}
       </Route>
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="*"
+        element={<Navigate to={getDefaultRoute(user.role)} replace />}
+      />
     </Routes>
   );
 };

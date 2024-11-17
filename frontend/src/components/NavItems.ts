@@ -1,74 +1,70 @@
+// src/components/NavItems.tsx
 import React from "react";
-import { NavItem } from "../utils/types";
 import {
-  Menu as MenuIcon,
   Dashboard,
   Person,
   Settings,
-  EventNote,
   Group,
-  AdminPanelSettings,
-  Logout,
   Article,
-  Notifications,
   Reviews,
   CardMembership,
   LocalPostOffice,
 } from "@mui/icons-material";
+import { NavItem, UserRole } from "../types/types";
 
 export const navItems: NavItem[] = [
   {
     title: "Dashboard",
     path: "/dashboard",
     icon: React.createElement(Dashboard),
-    roles: ["user", "admin", "reviewer"],
-  },
-  {
-    title: "Profile",
-    path: "/profile",
-    icon: React.createElement(Person),
-    roles: ["user", "admin", "reviewer"],
-  },
-  {
-    title: "Feedback Panel",
-    path: "/feedback-panel",
-    icon: React.createElement(Reviews),
-    roles: ["user", "admin", "reviewer"],
+    roles: [UserRole.STUDENT, UserRole.ADMIN],
   },
   {
     title: "Dashboard",
     path: "/admin-dashboard",
     icon: React.createElement(Dashboard),
-    roles: ["admin", "reviewer", "user"],
+    roles: [UserRole.ADMIN],
+  },
+  {
+    title: "Profile",
+    path: "/profile",
+    icon: React.createElement(Person),
+    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
+  },
+  {
+    title: "Feedback Panel",
+    path: "/feedback-panel",
+    icon: React.createElement(Reviews),
+    roles: [UserRole.ADMIN, UserRole.REVIEWER],
   },
   {
     title: "Users",
     path: "/users",
     icon: React.createElement(Group),
-    roles: ["admin", "reviewer", "user"],
+    roles: [UserRole.ADMIN],
   },
   {
     title: "Papers",
     path: "/papers",
     icon: React.createElement(Article),
-    roles: ["admin", "reviewer", "user"],
+    roles: [UserRole.ADMIN, UserRole.REVIEWER],
   },
   {
     title: "Certificates",
     path: "/certificates",
     icon: React.createElement(CardMembership),
-    roles: ["admin", "reviewer", "user"],
+    roles: [UserRole.ADMIN],
   },
   {
-    title: "letters",
+    title: "Letters",
     path: "/letters",
     icon: React.createElement(LocalPostOffice),
-    roles: ["admin", "reviewer", "user"],
+    roles: [UserRole.ADMIN],
   },
   {
     title: "Settings",
     path: "/settings",
     icon: React.createElement(Settings),
-    roles: ["admin", "reviewer", "user"],
+    roles: [UserRole.ADMIN],
   },
 ];

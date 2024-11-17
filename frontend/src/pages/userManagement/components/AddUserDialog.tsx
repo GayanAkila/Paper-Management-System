@@ -16,6 +16,7 @@ import {
   Typography,
   Box,
   Alert,
+  Divider,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 
@@ -103,7 +104,7 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid #E2E8F0",
+
           p: 2,
         }}
       >
@@ -114,8 +115,8 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
-      <DialogContent sx={{ p: 3, mt: 2 }}>
+      <Divider />
+      <DialogContent sx={{ p: 3 }}>
         <Alert severity="info" sx={{ mb: 3 }}>
           An email with login credentials will be sent to the user's email
           address.

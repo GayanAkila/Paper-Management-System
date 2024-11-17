@@ -8,7 +8,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -18,32 +17,32 @@ import {
   MenuItem,
   Divider,
   Stack,
-  Badge,
-  Button,
   Chip,
 } from "@mui/material";
-import {
-  Menu as MenuIcon,
-  Dashboard,
-  Person,
-  Settings,
-  EventNote,
-  Group,
-  AdminPanelSettings,
-  Logout,
-  Article,
-  Notifications,
-} from "@mui/icons-material";
+import { Person, Logout } from "@mui/icons-material";
 import { useState } from "react";
-import { auth } from "../../firebase";
+import { auth } from "../../config/firebase";
 import { signOut } from "firebase/auth";
 import { navItems } from "../NavItems";
+import LoadingScreen from "../LoadingScreen";
+import { UserRole } from "../../types/types";
 
 const AuthenticatedLayout = () => {
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, loading } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const userRole = user?.role as UserRole;
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (!user?.role) return false;
+    return item.roles.includes(user.role as UserRole);
+  });
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -73,10 +72,6 @@ const AuthenticatedLayout = () => {
     handleClose();
   };
 
-  const userRole = user.role || "user";
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(userRole)
-  );
   const drawerWidth = 250;
 
   return (
@@ -150,7 +145,7 @@ const AuthenticatedLayout = () => {
                     </Typography>
                   </Stack>
                   <Avatar
-                    src={user.photoUrl || undefined}
+                    src={user.photoURL || undefined}
                     alt={
                       user.displayName || user.email?.charAt(0).toUpperCase()
                     }

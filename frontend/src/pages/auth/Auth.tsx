@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../store/store";
+// src/pages/Auth/Auth.tsx
+
+import { SetStateAction, useEffect, useState } from "react";
+import { useAppDispatch } from "../../store/store";
 import {
   Box,
   Button,
@@ -10,268 +12,225 @@ import {
   TextField,
   Typography,
   Divider,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { AuthForm, authFormSchema } from "../../models/Form";
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-} from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
 import { login } from "../../store/slices/authSlice";
-import { auth, db } from "../../firebase";
-import GoogleIcon from "@mui/icons-material/Google";
 import EmailIcon from "@mui/icons-material/Email";
+import GoogleIcon from "@mui/icons-material/Google";
 import ResetPassword from "../../components/ResetPassword/ResetPassword";
+import {
+  signInWithEmail,
+  signInWithGoogle,
+  signUpWithEmail,
+} from "../../services/firebase";
+import { UserProfile } from "../../types/types";
 
 const Auth = () => {
   const [authType, setAuthType] = useState<"login" | "sign-up">("login");
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState(false);
-  const [resetPasswordEmail, setResetPasswordEmail] = useState("");
-  const [resetPasswordSuccess, setResetPasswordSuccess] = useState<
-    string | null
-  >(null);
-  const [resetPasswordError, setResetPasswordError] = useState<string | null>(
-    null
-  );
-  const { user } = useAppSelector((state) => state.auth);
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (Boolean(user)) {
-      navigate("/dashboard");
-    }
-  }, [user, navigate]);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<AuthForm>({
+    resolver: yupResolver(authFormSchema),
+    mode: "onChange",
+  });
 
-  const handlePasswordReset = async () => {
-    if (!resetPasswordEmail.length) return;
-    try {
-      await sendPasswordResetEmail(auth, resetPasswordEmail);
-      setResetPasswordSuccess(
-        "Password reset email sent. Please check your inbox."
-      );
-      setResetPasswordError(null);
-    } catch (error: any) {
-      setResetPasswordError(error.message);
-      setResetPasswordSuccess(null);
-    }
+  useEffect(() => {
+    reset();
+    setErrorMessage(null);
+  }, [authType, reset]);
+
+  const handleUserAuthentication = (userProfile: UserProfile) => {
+    dispatch(login(userProfile));
+    navigate("/dashboard");
   };
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+  const handleGoogleSignIn = async () => {
     try {
-      const { user } = await signInWithPopup(auth, provider);
-      if (user && user.email)
-        dispatch(
-          login({
-            email: user.email,
-            id: user.uid,
-            photoUrl: user.photoURL || null,
-            role: "user",
-          })
-        );
-    } catch (error) {
-      console.log("Error signing in:", error);
+      setLoading(true);
+      const userProfile = await signInWithGoogle();
+      handleUserAuthentication(userProfile);
+    } catch (error: any) {
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleFormSubmit = async (data: AuthForm) => {
     setErrorMessage(null);
     setLoading(true);
-    const { email, password } = data;
 
     try {
-      if (authType === "sign-up") {
-        const { user } = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        await setDoc(doc(db, "users", user.uid), { email });
+      let userProfile: UserProfile;
 
-        if (user && user.email) {
-          dispatch(
-            login({
-              email: user.email,
-              id: user.uid,
-              photoUrl: user.photoURL || null,
-              role: "user",
-            })
-          );
-        }
+      if (authType === "sign-up") {
+        userProfile = await signUpWithEmail(data.email, data.password);
       } else {
-        const { user } = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        if (user && user.email) {
-          dispatch(
-            login({
-              email: user.email,
-              id: user.uid,
-              photoUrl: user.photoURL || null,
-              role: "user",
-            })
-          );
-        }
+        userProfile = await signInWithEmail(data.email, data.password);
       }
+
+      handleUserAuthentication(userProfile);
     } catch (error: any) {
-      setErrorMessage(error.code);
+      setErrorMessage(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAuthType = () => {
-    setAuthType((prev) => (prev === "login" ? "sign-up" : "login"));
-    setErrorMessage(null);
-  };
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<AuthForm>({
-    resolver: yupResolver(authFormSchema),
-  });
-
   return (
-    <>
-      <ResetPassword
-        resetPasswordEmail={resetPasswordEmail}
-        resetPasswordSuccess={resetPasswordSuccess}
-        resetPasswordError={resetPasswordError}
-        setResetPasswordEmail={setResetPasswordEmail}
-        isOpen={resetPassword}
-        onClose={() => setResetPassword(false)}
-        handlePasswordReset={handlePasswordReset}
-      />
+    <Stack
+      alignItems="center"
+      justifyContent="center"
+      height="100vh"
+      width="100vw"
+      sx={{ background: (theme) => theme.palette.background.default }}
+    >
       <Stack
-        alignItems="center"
-        justifyContent="center"
-        height="100vh"
-        width="100vw"
-        sx={{ background: (theme) => theme.palette.background.lightBackground }}
+        width={500}
+        spacing={3}
+        sx={{
+          background: "#fff",
+          p: 4,
+          borderRadius: 2,
+          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+        }}
       >
-        <Stack
-          width={500}
-          height="auto"
-          alignItems="center"
-          alignContent="center"
-          justifyContent="space-between"
-          sx={{ background: "#fff", p: 4, borderRadius: 4 }}
-        >
-          <Typography variant="h4" sx={{ mb: 2 }}>
-            {authType === "login" ? "Sign In" : "Create Account"}
-          </Typography>
+        <Typography variant="h4" align="center">
+          {authType === "login" ? "Sign In" : "Create Account"}
+        </Typography>
 
-          {errorMessage && (
-            <Typography color="error" sx={{ mb: 2 }}>
-              {errorMessage}
-            </Typography>
-          )}
+        {errorMessage && (
+          <Alert severity="error" variant="filled">
+            {errorMessage}
+          </Alert>
+        )}
 
-          <FormControl fullWidth>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  id="email"
-                  label="Email"
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  sx={{ width: "100%" }}
-                  {...register("email")}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  id="password"
-                  type="password"
-                  label="Password"
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                  sx={{ width: "100%" }}
-                  {...register("password")}
-                />
-              </Grid>
-              {authType === "sign-up" && (
-                <Grid item xs={12}>
-                  <TextField
-                    id="confirm-password"
-                    type="password"
-                    label="Confirm Password"
-                    error={!!errors.confirmPassword}
-                    helperText={errors.confirmPassword?.message}
-                    sx={{ width: "100%" }}
-                    {...register("confirmPassword")}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12}>
-                <Button
-                  onClick={handleSubmit(handleFormSubmit)}
-                  size="large"
-                  variant="contained"
-                  disabled={loading}
-                  sx={{ width: "100%", mb: 2, height: 50 }}
-                  endIcon={<EmailIcon />}
-                >
-                  {authType === "login"
-                    ? "Sign in with Email"
-                    : "Create Account"}
-                </Button>
-                <Button
-                  onClick={signInWithGoogle}
-                  size="large"
-                  variant="contained"
-                  sx={{ width: "100%", mb: 2, height: 50 }}
-                  endIcon={<GoogleIcon />}
-                >
-                  {authType === "login"
-                    ? "Sign in with Google"
-                    : "Sign up with Google"}
-                </Button>
-                <Box sx={{ textAlign: "center" }}>
-                  <Typography>
-                    {authType === "login" ? (
-                      <>
-                        Don't have an account yet?{" "}
-                        <Link component="button" onClick={handleAuthType}>
-                          Sign up
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        Already have an account?{" "}
-                        <Link component="button" onClick={handleAuthType}>
-                          Sign in
-                        </Link>
-                      </>
-                    )}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
+        <form onSubmit={handleSubmit(handleFormSubmit)}>
+          <Stack spacing={2}>
+            <TextField
+              label="Email"
+              {...register("email")}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              disabled={loading}
+              fullWidth
+            />
+
+            <TextField
+              type="password"
+              label="Password"
+              {...register("password")}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              disabled={loading}
+              fullWidth
+            />
+
+            {authType === "sign-up" && (
+              <TextField
+                type="password"
+                label="Confirm Password"
+                {...register("confirmPassword")}
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword?.message}
+                disabled={loading}
+                fullWidth
+              />
+            )}
+
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              startIcon={
+                loading ? <CircularProgress size={20} /> : <EmailIcon />
+              }
+              fullWidth
+            >
+              {authType === "login" ? "Sign In" : "Sign Up"} with Email
+            </Button>
+
+            <Button
+              onClick={handleGoogleSignIn}
+              variant="outlined"
+              disabled={loading}
+              startIcon={<GoogleIcon />}
+              fullWidth
+            >
+              Continue with Google
+            </Button>
+
+            <Box textAlign="center">
+              <Typography variant="body2">
+                {authType === "login" ? (
+                  <>
+                    Don't have an account?{" "}
+                    <Link
+                      component="button"
+                      type="button"
+                      onClick={() => setAuthType("sign-up")}
+                    >
+                      Sign up
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{" "}
+                    <Link
+                      component="button"
+                      type="button"
+                      onClick={() => setAuthType("login")}
+                    >
+                      Sign in
+                    </Link>
+                  </>
+                )}
+              </Typography>
+            </Box>
+
             {authType === "login" && (
               <Divider>
-                <Button onClick={() => setResetPassword(true)}>
+                <Button
+                  onClick={() => setResetPassword(true)}
+                  disabled={loading}
+                >
                   Forgot password?
                 </Button>
               </Divider>
             )}
-          </FormControl>
-        </Stack>
+          </Stack>
+        </form>
       </Stack>
-    </>
+
+      <ResetPassword
+        isOpen={resetPassword}
+        onClose={() => setResetPassword(false)}
+        handlePasswordReset={function (): Promise<void> {
+          throw new Error("Function not implemented.");
+        }}
+        resetPasswordEmail={""}
+        resetPasswordSuccess={null}
+        resetPasswordError={null}
+        setResetPasswordEmail={function (value: SetStateAction<string>): void {
+          throw new Error("Function not implemented.");
+        }}
+      />
+    </Stack>
   );
 };
 

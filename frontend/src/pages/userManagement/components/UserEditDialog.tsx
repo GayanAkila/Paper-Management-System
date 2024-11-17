@@ -138,9 +138,8 @@ const UserEditDialog = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid #E2E8F0",
+
           p: 2,
-          mb: 3,
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -150,7 +149,7 @@ const UserEditDialog = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
+      <Divider />
       <DialogContent sx={{ p: 3 }}>
         <Stack spacing={3}>
           <TextField

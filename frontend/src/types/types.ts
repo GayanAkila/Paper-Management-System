@@ -40,3 +40,33 @@ export enum SubmissionType {
   research = "research",
   project = "project",
 }
+
+export enum UserRole {
+  ADMIN = "admin",
+  REVIEWER = "reviewer",
+  STUDENT = "student",
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string | null;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthState {
+  user: UserProfile | null;
+  loading: boolean;
+  error: string | null;
+}
+
+// For use in NavItems
+export interface NavItem {
+  title: string;
+  path: string;
+  icon: JSX.Element;
+  roles: UserRole[];
+}

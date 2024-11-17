@@ -10,7 +10,7 @@ const Profile = () => {
     email: user?.email || " ",
     phoneNo: "0774395708",
     registrationNo: "MC98711",
-    profilePicture: user?.photoUrl || "",
+    profilePicture: user?.photoURL || "",
   };
 
   return (

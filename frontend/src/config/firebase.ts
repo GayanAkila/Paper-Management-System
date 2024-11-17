@@ -5,7 +5,7 @@ import {
   setPersistence,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { firebaseConfig } from "./config/config";
+import { firebaseConfig } from "./config";
 
 // Initialize Firebase with error handling
 let app;
