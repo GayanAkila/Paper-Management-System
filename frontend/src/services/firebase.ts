@@ -33,7 +33,6 @@ export const createUserProfile = async (
     photoURL: user.photoURL,
     role,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
   await setDoc(userRef, {
