@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "./store/store";
 import { auth, db } from "./config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -137,7 +137,6 @@ const App = () => {
             photoURL: firebaseUser.photoURL,
             role: userData.role || UserRole.STUDENT,
             createdAt: userData.createdAt,
-            updatedAt: userData.updatedAt,
           };
 
           dispatch(login(userProfile));

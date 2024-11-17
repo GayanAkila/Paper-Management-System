@@ -54,7 +54,6 @@ export interface UserProfile {
   photoURL?: string | null;
   role: UserRole;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface AuthState {

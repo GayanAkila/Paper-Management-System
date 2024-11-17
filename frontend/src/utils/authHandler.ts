@@ -35,7 +35,6 @@ const createUserDocument = async (
     photoURL: userCredential.user.photoURL,
     role,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
   try {
@@ -67,9 +66,7 @@ const getUserFromSnapshot = (snapshot: DocumentSnapshot): UserProfile => {
     photoURL: data.photoUrl,
     role: data.role as UserRole,
     createdAt:
-      data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-    updatedAt:
-      data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString,
   };
 };
 

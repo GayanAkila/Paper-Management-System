@@ -1,11 +1,9 @@
-// src/store/slices/authSlice.ts
-
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, UserProfile } from "../../types/types";
 
 const initialState: AuthState = {
   user: null,
-  loading: true, // Start with loading true
+  loading: true,
   error: null,
 };
 
