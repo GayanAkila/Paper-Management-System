@@ -19,3 +19,5 @@ Thumbs.db
 .vscode/
 .idea/
 backend/key.json
+backend/config/service-account-key.json
+backend/firebase/admin-sdk-json.local

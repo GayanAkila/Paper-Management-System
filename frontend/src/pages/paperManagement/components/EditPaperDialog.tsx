@@ -14,39 +14,32 @@ import {
   Select,
   MenuItem,
   Stack,
+  Alert,
+  Divider,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
+import {
+  Submission,
+  updateSubmission,
+} from "../../../store/slices/submissionSlice";
+import { editSubmission } from "../../../services/submissionService";
+import { useAppDispatch } from "../../../store/store";
 
 interface EditPaperDialogProps {
   open: boolean;
   onClose: () => void;
-  paper: {
-    id: string;
-    title: string;
-    author: string;
-    type: string;
-  } | null;
-  onSubmit: (paperData: {
-    id: string;
-    title: string;
-    author: string;
-    type: string;
-    file?: File;
-  }) => void;
+  paper: Submission | null;
 }
 
-const EditPaperDialog = ({
-  open,
-  onClose,
-  paper,
-  onSubmit,
-}: EditPaperDialogProps) => {
+const EditPaperDialog = ({ open, onClose, paper }: EditPaperDialogProps) => {
+  const dispatch = useAppDispatch();
   const [formData, setFormData] = useState({
     title: "",
     author: "",
     type: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (paper) {
@@ -59,12 +52,17 @@ const EditPaperDialog = ({
   }, [paper]);
 
   const handleSubmit = () => {
+    console.log("file", file);
     if (paper?.id) {
-      onSubmit({
-        id: paper.id,
-        ...formData,
-        file: file || undefined,
-      });
+      const formDataToSubmit = new FormData();
+      formDataToSubmit.append("id", paper.id.toString());
+      formDataToSubmit.append("title", formData.title);
+      formDataToSubmit.append("author", formData.author);
+      formDataToSubmit.append("type", formData.type);
+      if (file) {
+        formDataToSubmit.append("file", file);
+      }
+      dispatch(updateSubmission({ id: paper.id, formData: formDataToSubmit }));
     }
     handleClose();
   };
@@ -72,12 +70,21 @@ const EditPaperDialog = ({
   const handleClose = () => {
     setFormData({ title: "", author: "", type: "" });
     setFile(null);
+    setFileError(null);
     onClose();
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+      const selectedFile = event.target.files[0];
+      console.log("file change", file);
+      if (selectedFile.type !== "application/pdf") {
+        setFileError("Please upload a valid PDF file.");
+        setFile(null);
+      } else {
+        setFile(selectedFile);
+        setFileError(null);
+      }
     }
   };
 
@@ -98,9 +105,7 @@ const EditPaperDialog = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid #E2E8F0",
           p: 2,
-          mb: 3,
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -110,7 +115,7 @@ const EditPaperDialog = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
+      <Divider />
       <DialogContent sx={{ p: 3 }}>
         <Stack spacing={3}>
           <TextField
@@ -149,10 +154,38 @@ const EditPaperDialog = ({
                 setFormData({ ...formData, type: e.target.value })
               }
             >
-              <MenuItem value="Research">Research</MenuItem>
+              <MenuItem value="Research Paper">Research Paper</MenuItem>
               <MenuItem value="Project">Project</MenuItem>
             </Select>
           </FormControl>
+
+          {/* File Upload Section */}
+          <Box>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+              Upload New File (PDF only)
+            </Typography>
+            <input
+              accept="application/pdf"
+              id="file-upload"
+              type="file"
+              hidden
+              onChange={handleFileChange}
+            />
+            <label htmlFor="file-upload">
+              <Button
+                variant="outlined"
+                component="span"
+                sx={{ textTransform: "none", borderRadius: 1 }}
+              >
+                {file ? file.name : "Choose File"}
+              </Button>
+            </label>
+            {fileError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {fileError}
+              </Alert>
+            )}
+          </Box>
         </Stack>
       </DialogContent>
 
@@ -174,6 +207,7 @@ const EditPaperDialog = ({
             textTransform: "none",
             borderRadius: 1,
           }}
+          disabled={!!fileError}
         >
           Save Changes
         </Button>

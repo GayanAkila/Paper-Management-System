@@ -24,7 +24,7 @@ import {
 } from "@mui/icons-material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
-import { Submission } from "../../../types/types";
+import { Submission } from "../../../store/slices/submissionSlice";
 
 interface ReviewDialogProps {
   open: boolean;
@@ -49,7 +49,6 @@ const ReviewDialog = ({
   const [decision, setDecision] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  // Get current reviewer's feedback if exists
   const currentReviewerFeedback = useMemo(
     () =>
       submission.feedback?.comments.find(
@@ -136,13 +135,13 @@ const ReviewDialog = ({
               <Typography variant="body2" sx={{ mt: 1 }}>
                 {currentReviewerFeedback.comment}
               </Typography>
-              {currentReviewerFeedback.document && (
+              {currentReviewerFeedback.fileUrl && (
                 <Button
                   startIcon={<DownloadIcon />}
                   size="small"
                   onClick={() => {
-                    if (currentReviewerFeedback.document) {
-                      window.open(currentReviewerFeedback.document, "_blank");
+                    if (currentReviewerFeedback.fileUrl) {
+                      window.open(currentReviewerFeedback.fileUrl, "_blank");
                     }
                   }}
                   sx={{ mt: 1 }}

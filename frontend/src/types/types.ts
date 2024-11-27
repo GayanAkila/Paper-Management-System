@@ -23,22 +23,22 @@ export interface Feedback {
   finalDecision: string;
 }
 
-export interface Submission {
-  id: string;
-  title: string;
-  authors: Author[];
-  type: string;
-  status: string;
-  submittedOn: string;
-  document: string;
-  feedback?: Feedback;
-  studentEmail: string;
-  reviewerEmail: string[];
-}
+// export interface Submission {
+//   id: string;
+//   title: string;
+//   authors: Author[];
+//   type: string;
+//   status: string;
+//   submittedOn: string;
+//   document: string;
+//   feedback?: Feedback;
+//   studentEmail: string;
+//   reviewerEmail: string[];
+// }
 
 export enum SubmissionType {
-  research = "research",
-  project = "project",
+  research = "Research Paper",
+  project = "Project",
 }
 
 export enum UserRole {
@@ -51,9 +51,11 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
-  photoURL?: string | null;
+  photoURL?: string;
   role: UserRole;
-  createdAt: string;
+  createdAt?: string;
+  idToken: string;
+  refreshToken: string;
 }
 
 export interface AuthState {
@@ -62,10 +64,23 @@ export interface AuthState {
   error: string | null;
 }
 
-// For use in NavItems
 export interface NavItem {
   title: string;
   path: string;
   icon: JSX.Element;
   roles: UserRole[];
+}
+
+export enum State {
+  idle = "idle",
+  loading = "loading",
+  success = "success",
+  failed = "failed",
+}
+
+export enum ConfirmationType {
+  update = "update",
+  send = "send",
+  upload = "upload",
+  accept = "accept",
 }

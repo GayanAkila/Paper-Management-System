@@ -17,10 +17,12 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
 import { UserProfile, UserRole } from "../types/types";
+import { jwtDecode } from "jwt-decode";
 
-// Create user profile in Firestore
 export const createUserProfile = async (
   userCredential: UserCredential,
+  idToken: string,
+  refreshToken: string,
   role: UserRole = UserRole.STUDENT
 ): Promise<UserProfile> => {
   const { user } = userCredential;
@@ -30,9 +32,13 @@ export const createUserProfile = async (
     uid: user.uid,
     email: user.email!,
     displayName: user.displayName || undefined,
-    photoURL: user.photoURL,
+    photoURL:
+      user.photoURL ||
+      "https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=",
     role,
     createdAt: new Date().toISOString(),
+    idToken,
+    refreshToken,
   };
 
   await setDoc(userRef, {
@@ -44,7 +50,6 @@ export const createUserProfile = async (
   return userProfile;
 };
 
-// Get user profile from Firestore
 export const getUserProfile = async (
   uid: string
 ): Promise<UserProfile | null> => {
@@ -58,7 +63,6 @@ export const getUserProfile = async (
   return null;
 };
 
-// Update user profile in Firestore
 export const updateUserProfile = async (
   uid: string,
   data: Partial<UserProfile>
@@ -70,7 +74,11 @@ export const updateUserProfile = async (
   });
 };
 
-// Email Sign Up
+interface DecodedIdToken {
+  role: UserRole;
+  [key: string]: any;
+}
+
 export const signUpWithEmail = async (
   email: string,
   password: string
@@ -81,7 +89,14 @@ export const signUpWithEmail = async (
       email,
       password
     );
-    return await createUserProfile(userCredential);
+
+    const idToken = await userCredential.user.getIdToken();
+    const refreshToken = userCredential.user.refreshToken;
+
+    const decodedToken: DecodedIdToken = jwtDecode(idToken);
+    const role = decodedToken.role || UserRole.STUDENT;
+
+    return await createUserProfile(userCredential, idToken, refreshToken, role);
   } catch (error: any) {
     throw new Error(error.message);
   }
@@ -116,15 +131,19 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
 
-    // Check if user profile exists
     const existingProfile = await getUserProfile(userCredential.user.uid);
 
     if (existingProfile) {
       return existingProfile;
     }
 
-    // Create new profile if doesn't exist
-    return await createUserProfile(userCredential);
+    const idToken = await userCredential.user.getIdToken();
+    const refreshToken = userCredential.user.refreshToken;
+
+    const decodedToken: DecodedIdToken = jwtDecode(idToken);
+    const role = decodedToken.role || UserRole.STUDENT;
+
+    return await createUserProfile(userCredential, idToken, refreshToken, role);
   } catch (error: any) {
     throw new Error(error.message);
   }

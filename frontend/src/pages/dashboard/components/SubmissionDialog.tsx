@@ -16,15 +16,17 @@ import {
   Alert,
   Stack,
   Divider,
+  SelectChangeEvent,
 } from "@mui/material";
 import { Close, Add, Remove, Upload } from "@mui/icons-material";
-import { Author, Submission, SubmissionType } from "../../../types/types";
+import { Author, SubmissionType } from "../../../types/types";
+import { Submission } from "../../../store/slices/submissionSlice";
 
 interface SubmissionDialogProps {
   open: boolean;
   onClose: () => void;
   mode: "create" | "edit";
-  initialData?: Submission;
+  initialData?: Submission | null;
   onSubmit: (data: {
     type: string;
     title: string;
@@ -54,8 +56,8 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
       setType(initialData.type);
       setTitle(initialData.title);
       setAuthors(initialData.authors);
-      if (initialData.document) {
-        setCurrentFileName(initialData.document.split("/").pop() || "");
+      if (initialData.fileUrl) {
+        setCurrentFileName(initialData.fileUrl.split("/").pop() || "");
       }
     } else {
       // Reset form for create mode
@@ -71,6 +73,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
+    console.log("selectedFIle", selectedFile);
     if (selectedFile) {
       if (selectedFile.type === "application/pdf") {
         setFile(selectedFile);
@@ -160,6 +163,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
   };
 
   const handleSubmit = async () => {
+    console.log("file", file);
     if (validateForm()) {
       onSubmit({
         type,
@@ -171,6 +175,16 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
         })),
       });
       handleClose();
+    }
+  };
+
+  const handleTypeChange = (event: SelectChangeEvent<string>) => {
+    const selectedType = event.target.value as string;
+    setType(selectedType);
+
+    // If changing from Project to Research Paper, keep only one author
+    if (selectedType === SubmissionType.research && authors.length > 1) {
+      setAuthors([authors[0]]);
     }
   };
 
@@ -206,11 +220,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
         <Stack spacing={3}>
           <FormControl fullWidth error={!!errors.type}>
             <InputLabel>Type</InputLabel>
-            <Select
-              value={type}
-              label="Type"
-              onChange={(e) => setType(e.target.value)}
-            >
+            <Select value={type} label="Type" onChange={handleTypeChange}>
               <MenuItem value={SubmissionType.research}>
                 Research Paper
               </MenuItem>
@@ -259,6 +269,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
                 variant="outlined"
                 component="span"
                 fullWidth
+                disabled={mode === "edit"}
                 startIcon={<Upload />}
                 sx={{ height: 56, borderRadius: 1.5 }}
               >

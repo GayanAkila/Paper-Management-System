@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "./store/store";
@@ -98,7 +99,7 @@ const ProtectedRoute = ({
     return <LoadingScreen />;
   }
 
-  if (!user) {
+  if (!user || !isAuthenticated()) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -110,47 +111,48 @@ const ProtectedRoute = ({
   return element;
 };
 
+const isAuthenticated = () => {
+  const token = localStorage.getItem("idToken");
+  return !!token;
+};
+
 const App = () => {
   const dispatch = useAppDispatch();
   const { user, loading } = useAppSelector((state) => state.auth);
-  const location = useLocation();
 
   useEffect(() => {
-    dispatch(setLoading(true));
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-
-          if (!userDoc.exists()) {
-            dispatch(logout());
-            return;
-          }
-
-          const userData = userDoc.data();
-
+    const token = localStorage.getItem("idToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+  
+    if (token) {
+      const fetchUserProfile = async () => {
+        try {
+          const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
           const userProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email!,
-            displayName: firebaseUser.displayName || undefined,
-            photoURL: firebaseUser.photoURL,
-            role: userData.role || UserRole.STUDENT,
-            createdAt: userData.createdAt,
+            uid: response.data.uid,
+            email: response.data.email,
+            displayName: response.data.name,
+            role: response.data.role,
+            idToken: token,
+            refreshToken: refreshToken || "",
           };
-
           dispatch(login(userProfile));
-        } else {
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
           dispatch(logout());
         }
-      } catch (error) {
-        console.error("Error syncing auth state:", error);
-        dispatch(logout());
-      }
-    });
-
-    return () => unsubscribe();
+      };
+      fetchUserProfile();
+    } else {
+      dispatch(logout());
+    }
   }, [dispatch]);
+  
+  
 
   if (loading) {
     return <LoadingScreen />;

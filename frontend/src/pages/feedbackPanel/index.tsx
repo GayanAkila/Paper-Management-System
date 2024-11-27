@@ -10,8 +10,8 @@ import {
   GridToolbar,
 } from "@mui/x-data-grid";
 import { submissionsData } from "../../tempData";
-import { Submission } from "../../types/types";
 import { useAppSelector } from "../../store/store";
+import { Submission } from "../../store/slices/submissionSlice";
 
 const FeedbackPanel = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);

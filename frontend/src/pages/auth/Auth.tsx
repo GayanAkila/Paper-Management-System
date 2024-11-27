@@ -19,18 +19,21 @@ import { login } from "../../store/slices/authSlice";
 import EmailIcon from "@mui/icons-material/Email";
 import GoogleIcon from "@mui/icons-material/Google";
 import ResetPassword from "../../components/ResetPassword/ResetPassword";
+import { registerUser, loginUser } from "../../services/authService";
 import {
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
 } from "../../services/firebase";
 import { UserProfile } from "../../types/types";
+import { useSnackbar } from "notistack";
 
 const Auth = () => {
   const [authType, setAuthType] = useState<"login" | "sign-up">("login");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -41,7 +44,7 @@ const Auth = () => {
     formState: { errors },
     reset,
   } = useForm<AuthForm>({
-    resolver: yupResolver(authFormSchema),
+    // resolver: yupResolver(authFormSchema),
     mode: "onChange",
   });
 
@@ -51,9 +54,14 @@ const Auth = () => {
   }, [authType, reset]);
 
   const handleUserAuthentication = (userProfile: UserProfile) => {
+    // Save tokens to local storage
+    // localStorage.setItem("idToken", userProfile.idToken);
+    // localStorage.setItem("refreshToken", userProfile.refreshToken);
+  
     dispatch(login(userProfile));
     navigate("/dashboard");
   };
+  
 
   const handleGoogleSignIn = async () => {
     try {
@@ -62,31 +70,54 @@ const Auth = () => {
       handleUserAuthentication(userProfile);
     } catch (error: any) {
       setErrorMessage(error.message);
+      enqueueSnackbar(error.message, { variant: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleFormSubmit = async (data: AuthForm) => {
+    
     setErrorMessage(null);
     setLoading(true);
-
+  
     try {
       let userProfile: UserProfile;
-
+  
       if (authType === "sign-up") {
-        userProfile = await signUpWithEmail(data.email, data.password);
+        // Use backend register API
+        const registerResponse = await registerUser({
+          // name: data.name,
+          name: data.email,
+          email: data.email,
+          password: data.password,
+          role: "student", 
+        });
+        setAuthType("login");
+        setErrorMessage("Account created successfully. Please sign in.");
+        enqueueSnackbar("Account created successfully. Please sign in.", {
+          variant: "success",
+        });
       } else {
-        userProfile = await signInWithEmail(data.email, data.password);
+        const loginResponse = await loginUser({
+          email: data.email,
+          password: data.password,
+        });
+        userProfile = { ...loginResponse.user, uid: loginResponse.user.uid };
+        handleUserAuthentication(userProfile);
       }
-
-      handleUserAuthentication(userProfile);
+  
     } catch (error: any) {
-      setErrorMessage(error.message);
+      console.error("Authentication error:", error);
+      setErrorMessage(error.response?.data?.message || "An error occurred.");
+      enqueueSnackbar(error.response?.data?.message || "An error occurred.", {
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <Stack

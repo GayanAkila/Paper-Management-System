@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, UserProfile } from "../../types/types";
+import { logoutUser } from "../../services/authService";
 
 const initialState: AuthState = {
   user: null,
@@ -15,12 +16,18 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.loading = false;
       state.error = null;
+      // localStorage.setItem("idToken", action.payload.idToken);
+      // localStorage.setItem("refreshToken", action.payload.refreshToken);
     },
     logout: (state) => {
       state.user = null;
       state.loading = false;
       state.error = null;
+      console.log("logout");
+      // Clear tokens from localStorage
+      logoutUser();
     },
+    
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },

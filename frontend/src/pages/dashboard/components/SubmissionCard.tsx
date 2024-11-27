@@ -29,7 +29,8 @@ import {
   Download as DownloadIcon,
   OpenInNew as OpenInNewIcon,
 } from "@mui/icons-material";
-import { Submission } from "../../../types/types";
+import { Submission } from "../../../store/slices/submissionSlice";
+import { formatDate } from "../../../utils/utils";
 
 interface SubmissionCardProps {
   submission: Submission;
@@ -62,8 +63,8 @@ const SubmissionCard = ({
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "pending":
+    switch (status) {
+      case "submitted":
         return "#EDEDFF";
       case "approved":
         return "#DEF8EE";
@@ -79,8 +80,8 @@ const SubmissionCard = ({
   };
 
   const getStatusTextColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "pending":
+    switch (status) {
+      case "submitted":
         return "#8A8CD9";
       case "approved":
         return "#4AA785";
@@ -147,7 +148,7 @@ const SubmissionCard = ({
           >
             <MenuItem
               onClick={() => {
-                window.open(submission.document!, "_blank");
+                window.open(submission.fileUrl!, "_blank");
                 handleMenuClose();
               }}
             >
@@ -195,7 +196,7 @@ const SubmissionCard = ({
             }}
           >
             <Typography color="text.secondary" sx={{ width: 100 }}>
-              Authors
+              Author/s
             </Typography>
             <Stack spacing={1} display={"flex"} direction={"row"}>
               {submission.authors.map((author, index) => (
@@ -284,7 +285,7 @@ const SubmissionCard = ({
               Submitted on
             </Typography>
             <Typography color="text.primary">
-              {submission.submittedOn}
+              {submission.createdAt ? formatDate(submission.createdAt) : "N/A"}
             </Typography>
           </Box>
 
@@ -402,12 +403,12 @@ const SubmissionCard = ({
                 <Typography variant="body2" sx={{ mb: 2 }}>
                   {comment.comment}
                 </Typography>
-                {comment.document && (
+                {comment.fileUrl && (
                   <Button
                     startIcon={<DocumentIcon />}
                     variant="outlined"
                     size="small"
-                    onClick={() => window.open(comment.document!, "_blank")}
+                    onClick={() => window.open(comment.fileUrl!, "_blank")}
                     sx={{ textTransform: "none" }}
                   >
                     View Review Document

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../../store/store";
 import { logout } from "../../store/slices/authSlice";
@@ -26,12 +26,25 @@ import { signOut } from "firebase/auth";
 import { navItems } from "../NavItems";
 import LoadingScreen from "../LoadingScreen";
 import { UserRole } from "../../types/types";
+import { useSnackbar } from "notistack";
 
 const AuthenticatedLayout = () => {
+  const { enqueueSnackbar } = useSnackbar();
+  const common = useAppSelector((state) => state.common);
   const { user, loading } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    if (common.timestamp != null) {
+      enqueueSnackbar(common.message, {
+        variant: common.type,
+        preventDuplicate: true,
+        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+      });
+    }
+  }, [common.timestamp]);
 
   const userRole = user?.role as UserRole;
 

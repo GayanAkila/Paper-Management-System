@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -19,6 +19,12 @@ import {
 } from "@mui/icons-material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import EditPaperDialog from "./components/EditPaperDialog";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+import {
+  fetchAllSubmissions,
+  Submission,
+} from "../../store/slices/submissionSlice";
+import { editSubmission } from "../../services/submissionService";
 
 interface PaperData {
   id: string;
@@ -31,11 +37,15 @@ interface PaperData {
 }
 
 const Papers = () => {
+  const dispatch = useAppDispatch();
+  const { allSubmissions, fetchState } = useAppSelector(
+    (state) => state.submissions
+  );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [assignReviewerDialogOpen, setAssignReviewerDialogOpen] =
     useState(false);
-  const [selectedPaper, setSelectedPaper] = useState<PaperData | null>(null);
+  const [selectedPaper, setSelectedPaper] = useState<Submission | null>(null);
 
   const getStatusChip = (status: string) => {
     const statusStyles = {
@@ -44,7 +54,7 @@ const Papers = () => {
         color: "#59A8D4",
         label: "Under Review",
       },
-      Pending: {
+      submitted: {
         bgcolor: "#EEF2FF",
         color: "#818CF8",
         label: "Pending",
@@ -67,7 +77,8 @@ const Papers = () => {
     };
 
     const style =
-      statusStyles[status as keyof typeof statusStyles] || statusStyles.Pending;
+      statusStyles[status as keyof typeof statusStyles] ||
+      statusStyles.submitted;
 
     return (
       <Chip
@@ -86,7 +97,11 @@ const Papers = () => {
     );
   };
 
-  const handleEdit = (paper: PaperData) => {
+  useEffect(() => {
+    dispatch(fetchAllSubmissions());
+  }, []);
+
+  const handleEdit = (paper: Submission) => {
     setSelectedPaper(paper);
     setEditDialogOpen(true);
   };
@@ -96,12 +111,12 @@ const Papers = () => {
     console.log("Downloading paper:", paperId);
   };
 
-  const handleReviewClick = (paper: PaperData) => {
+  const handleReviewClick = (paper: Submission) => {
     setSelectedPaper(paper);
     setReviewDialogOpen(true);
   };
 
-  const handleAssignReviewer = (paper: PaperData) => {
+  const handleAssignReviewer = (paper: Submission) => {
     setSelectedPaper(paper);
     setAssignReviewerDialogOpen(true);
   };
@@ -199,48 +214,6 @@ const Papers = () => {
     },
   ];
 
-  const paperData = [
-    {
-      id: "P001",
-      title: "The Impact of AI on Business...",
-      author: "Gayan Akila",
-      type: "Research",
-      submissionDate: "20 Oct 2024",
-      reviewers: "Harsha, Dilan",
-      status: "Under Review",
-      feedback: [
-        {
-          reviewer: "Harsha",
-          decision: "Approved",
-          comments: "Good work. Keep it up!",
-        },
-        {
-          reviewer: "Dilan",
-          decision: "Approved with changes",
-          comments: "Good work. Please make the suggested changes.",
-        },
-      ],
-    },
-    {
-      id: "P002",
-      title: "The Impact of AI on Business...",
-      author: "Gayan Akila",
-      type: "Research",
-      submissionDate: "20 Oct 2024",
-      reviewers: "Harsha, Dilan",
-      status: "Under Review",
-    },
-    {
-      id: "P003",
-      title: "The Impact of AI on Business...",
-      author: "Gayan Akila",
-      type: "Research",
-      submissionDate: "20 Oct 2024",
-      reviewers: "Harsha, Dilan",
-      status: "Under Review",
-    },
-  ];
-
   return (
     <Box>
       <Typography variant="h4">Paper Management</Typography>
@@ -269,15 +242,17 @@ const Papers = () => {
         }}
       >
         <DataGrid
-          rows={paperData}
+          rows={allSubmissions}
           columns={columns}
           pageSizeOptions={[10, 25, 50]}
+          loading={fetchState === "loading"}
           initialState={{
             pagination: {
               paginationModel: { pageSize: 10 },
             },
           }}
           disableRowSelectionOnClick
+          getRowId={(row) => row.id}
           disableColumnMenu
           slots={{
             toolbar: GridToolbar,
@@ -295,15 +270,6 @@ const Papers = () => {
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
           paper={selectedPaper}
-          onSubmit={function (paperData: {
-            id: string;
-            title: string;
-            author: string;
-            type: string;
-            file?: File;
-          }): void {
-            throw new Error("Function not implemented.");
-          }}
         />
       )}
 
