@@ -17,10 +17,10 @@ const drive = google.drive({ version: "v3", auth });
 // @route   POST /api/v1/submissions
 // @access  Private
 exports.createSubmission = async (req, res) => {
-  const { type, title, authors } = req.body;
+  const submission = JSON.parse(req.body.submission);
   const file = req.file;
 
-  if (!type || !title || !authors || !file) {
+  if (!submission.type || !submission.title || !submission.authors || !file) {
     return res
       .status(400)
       .json({
@@ -29,7 +29,7 @@ exports.createSubmission = async (req, res) => {
   }
 
   const allowedTypes = ["Research Paper", "Project"];
-  if (!allowedTypes.includes(type)) {
+  if (!allowedTypes.includes(submission.type)) {
     return res
       .status(400)
       .json({
@@ -41,7 +41,8 @@ exports.createSubmission = async (req, res) => {
 
   let parsedAuthors;
   try {
-    parsedAuthors = Array.isArray(authors) ? authors : JSON.parse(authors);
+    parsedAuthors = Array.isArray(submission.authors) ? submission.authors : JSON.parse(submission.authors);
+    console.log("Parsed authors:", parsedAuthors);
     if (!Array.isArray(parsedAuthors) || parsedAuthors.length < 1) {
       return res
         .status(400)
@@ -50,7 +51,7 @@ exports.createSubmission = async (req, res) => {
         });
     }
 
-    if (type === "Research Paper" && parsedAuthors.length !== 1) {
+    if (submission.type === "Research Paper" && parsedAuthors.length !== 1) {
       return res
         .status(400)
         .json({ message: "Research Paper must have exactly 1 author." });
@@ -73,6 +74,7 @@ exports.createSubmission = async (req, res) => {
       }
     }
   } catch (error) {
+    console.log("Error parsing authors:", error);
     return res
       .status(400)
       .json({ message: "Invalid authors format. Must be a valid JSON array." });
@@ -117,8 +119,8 @@ exports.createSubmission = async (req, res) => {
 
     const submissionData = {
       author: req.user.uid,
-      type,
-      title,
+      type : submission.type,
+      title : submission.title,
       authors: parsedAuthors,
       fileUrl,
       status: "submitted",
@@ -185,9 +187,7 @@ exports.editSubmissionStatus = async (req, res) => {
 // @access  Private (Author only)
 exports.editSubmission = async (req, res) => {
   const { id } = req.params; 
-  const { title, authors, type } = req.body;
-
-  const parsedAuthors = JSON.parse(authors);
+  const {authors, type, title} = JSON.parse(req.body.submission);
   
   try {
     const submissionRef = db.collection("submissions").doc(id);
@@ -199,7 +199,7 @@ exports.editSubmission = async (req, res) => {
 
     const submission = submissionDoc.data();
 
-    if (submission.author !== req.user.uid) {
+    if (submission.author !== req.user.uid && req.user.role !== "admin") {
       return res.status(403).json({
         message: "You do not have permission to edit this submission.",
       });
@@ -222,7 +222,7 @@ exports.editSubmission = async (req, res) => {
     }
     
     if (authors) {
-      updateData.authors = parsedAuthors;
+      updateData.authors = authors;
     }
 
     if(type) {
@@ -231,7 +231,7 @@ exports.editSubmission = async (req, res) => {
     
     await submissionRef.update(updateData);
 
-    res.status(200).json({ message: "Submission updated successfully." });
+    res.status(200).json({ message: "Submission updated successfully.", body: req.body, });
   } catch (error) {
     console.error("Error editing submission:", error);
     res.status(500).json({ message: "Failed to edit submission." });
@@ -368,7 +368,6 @@ exports.resubmitSubmission = async (req, res) => {
 
     await submissionRef.update({
       fileUrl,
-      status: "submitted",
       updatedAt: new Date().toISOString(),
     });
 
@@ -384,7 +383,7 @@ exports.resubmitSubmission = async (req, res) => {
 exports.assignReviewers = async (req, res) => {
   const { id } = req.params;
   const { reviewers } = req.body; // Array of reviewer UIDs
-
+  console.log("reviewers: ", req.body);
   if (!reviewers || !Array.isArray(reviewers) || reviewers.length < 1) {
     return res
       .status(400)
@@ -421,6 +420,7 @@ exports.submitReview = async (req, res) => {
   const { comments, decision } = req.body;
 
   const allowedDecisions = ["approve", "needs revision", "reject"];
+  console.log("req.body: ", req.body);
 
   if (!comments || !decision || !allowedDecisions.includes(decision)) {
     return res.status(400).json({
@@ -451,38 +451,49 @@ exports.submitReview = async (req, res) => {
         .json({ message: "You are not assigned to review this submission." });
     }
 
-    await submissionRef.update({
-      reviews: admin.firestore.FieldValue.arrayUnion({
+      // Remove existing review from same reviewer
+      const updatedReviews = (submission.reviews?.comments || []).filter(
+        (review) => review.reviewer !== req.user.email
+      );
+
+    // await submissionRef.update({
+    //   reviews: admin.firestore.FieldValue.arrayUnion({
+    //     reviewer: req.user.email,
+    //     comments,
+    //     decision,
+    //     submittedAt: new Date().toISOString(),
+    //   }),
+    // });
+
+    
+    const updatedData = {
+      'reviews.comments': [...updatedReviews, {
         reviewer: req.user.email,
         comments,
-        decision,
-        submittedAt: new Date().toISOString(),
-      }),
-    });
-
-    let newStatus;
-    if (decision === "approve") {
-      const allDecisions = (submission.reviews || [])
-        .map((review) => review.decision)
-        .concat(decision);
-      const allApproved = allDecisions.every((d) => d === "approve");
-
-      if (allApproved) {
-        newStatus = "approved";
-      }
-    } else if (decision === "needs revision") {
-      newStatus = "needs revision";
-    } else if (decision === "reject") {
-      newStatus = "rejected";
+        submittedAt: new Date().toISOString()
+      }],
+      'reviews.finalDecision': decision
     }
 
-    if (newStatus) {
-      await submissionRef.update({ status: newStatus });
+    await submissionRef.update(updatedData);
+
+    switch(decision) {
+      case 'approve':
+        updatedData.status = 'approved';
+        break;
+      case 'needs revision':
+        updatedData.status = 'needs revision';
+        break;  
+      case 'reject':
+        updatedData.status = 'rejected';
+        break;
     }
 
+    await submissionRef.update(updatedData);
+    
     res
       .status(200)
-      .json({ message: "Review submitted successfully.", newStatus });
+      .json({ message: "Review submitted successfully." });
   } catch (error) {
     console.error("Error submitting review:", error);
     res.status(500).json({ message: "Failed to submit review." });

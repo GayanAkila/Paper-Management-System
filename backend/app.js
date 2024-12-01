@@ -21,12 +21,14 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
+const settingRoutes = require('./routes/settingRoutes');
 // Add other route files
 
 // Mount routers
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/submissions', submissionRoutes);
+app.use('/api/v1/settings', settingRoutes);
 app.use('/api/v1', certificateRoutes);
 // Mount other routers
 

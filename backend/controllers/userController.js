@@ -49,32 +49,13 @@ exports.updateUserProfile = async (req, res) => {
   }
 };
 
-// @route   PUT /api/v1/users/:uid
-// @access  Private/Admin
-exports.updateUser = async (req, res) => {
-  const { role, isActive } = req.body;
-  const { uid } = req.params;
-  console.log(role, isActive);
-  try {
-    console.log("A");
-    await auth.setCustomUserClaims(uid, { role, isActive });
-    console.log("B");
-    await db.collection("users").doc(uid).update({ role, isActive });
-
-    res.status(200).json({ message: "User updated successfully" });
-  } catch (error) {
-    console.log("error");
-    res.status(500).json({ message: error.message });
-  }
-};
-
 // @route   PUT /api/v1/users/:id/role
 // @access  Private (Admin only)
 exports.updateUserRole = async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
 
-  const allowedRoles = ["user", "admin", "reviewer"];
+  const allowedRoles = ["student", "admin", "reviewer"];
   if (!role || !allowedRoles.includes(role)) {
     return res
       .status(400)
@@ -111,5 +92,93 @@ exports.deactivateUser = async (req, res) => {
   } catch (error) {
     console.error("Error deactivating user:", error);
     res.status(500).json({ message: "Failed to deactivate user." });
+  }
+};
+
+// @route   GET /api/v1/users
+// @access  Private (Admin only)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const usersRef = db.collection("users");
+    const snapshot = await usersRef.get();
+
+    if (snapshot.empty) {
+      return res.status(200).json([]);
+    }
+
+    const users = [];
+    snapshot.forEach(doc => {
+      users.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error getting users:", error);
+    res.status(500).json({ message: "Failed to get users." });
+  }
+};
+
+// @route   PUT /api/v1/users/:id
+// @access  Private (Admin only)
+exports.updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { role, isActive } = req.body;
+
+  const allowedRoles = ["student", "admin", "reviewer"];
+  if (role && !allowedRoles.includes(role)) {
+    return res
+      .status(400)
+      .json({
+        message: `Invalid role. Allowed roles: ${allowedRoles.join(", ")}`,
+      });
+  }
+
+  try {
+    const customClaims = {};
+    const updateData = {};
+
+    if (role) {
+      customClaims.role = role;
+      updateData.role = role;
+    }
+
+    if (typeof isActive === "boolean") {
+      customClaims.isActive = isActive;
+      updateData.isActive = isActive;
+    }
+
+    if (Object.keys(customClaims).length > 0) {
+      await auth.setCustomUserClaims(id, customClaims);
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      const userRef = db.collection("users").doc(id);
+      await userRef.update(updateData);
+    }
+
+    res.status(200).json({ message: "User updated successfully." });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Failed to update user." });
+  }
+};
+
+// @route   DELETE /api/v1/users/:id
+// @access  Private (Admin only)
+exports.deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Delete the user from Firebase Authentication
+    await auth.deleteUser(id);
+
+    // Delete the user from Firestore
+    const userRef = db.collection("users").doc(id);
+    await userRef.delete();
+
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Failed to delete user." });
   }
 };
