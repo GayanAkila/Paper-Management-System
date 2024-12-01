@@ -11,8 +11,7 @@ const Profile = () => {
   const profileData = {
     name: user?.displayName || "user",
     email: user?.email || " ",
-    phoneNo: "0774395708",
-    registrationNo: "MC98711",
+
     profilePicture: user?.photoURL || "",
   };
 
@@ -21,19 +20,18 @@ const Profile = () => {
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%", // Take full height of parent
-      }}
-    >
+    <Box height={"90%"}>
       {/* Fixed Header */}
-      <Box>
-        <Typography variant="h4">Profile</Typography>
-        <Box>
-          <ProfileView profileData={profileData} />
-        </Box>
+
+      <Typography variant="h4">Profile</Typography>
+      <Box
+        display={"flex"}
+        height={"100%"}
+        flexDirection={"column"}
+        justifyContent={"space-between"}
+      >
+        <ProfileView profileData={profileData} />
+
         <Stack p={2} display={"flex"} direction={"row"} spacing={2} width={500}>
           <Button variant="contained" sx={{ height: 45, borderRadius: 1.5 }}>
             Edit Profile

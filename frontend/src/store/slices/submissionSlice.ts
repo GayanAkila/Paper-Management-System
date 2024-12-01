@@ -5,15 +5,15 @@ import { enqueueSnackbarMessage } from "./commonSlice";
 import axios, { HttpStatusCode } from "axios";
 import axiosInstance from "../../services/axiosInstance";
 
-interface Author {
+export interface Author {
   name: string;
   email: string;
 }
 
-interface Comment {
+export interface Comment {
   reviewer: string;
-  date: string;
-  comment: string;
+  submittedAt: string;
+  comments: string;
   fileUrl: string;
 }
 
@@ -27,26 +27,32 @@ export interface Submission {
   fileUrl?: string;
   createdAt?: string;
   updatedAt?: string;
-  reviewerEmail: string;
-  feedback: { comments: Comment[]; finalDecision: string | null };
+  reviewers: string[];
+  reviews: { comments: Comment[]; finalDecision: string | null };
 }
 
 interface SubmissionsState {
   userSubmissions: Submission[];
   allSubmissions: Submission[];
+  reviewersSubmissions: Submission[];
   fetchState: State;
   updateState: State;
   uploadState: State;
   stateMessage: string;
+  assignReviewersState: State;
+  getReviewsState: State;
 }
 
 // Initial state
 const initialState: SubmissionsState = {
   userSubmissions: [],
   allSubmissions: [],
+  reviewersSubmissions: [],
   fetchState: State.idle,
   updateState: State.idle,
   uploadState: State.idle,
+  assignReviewersState: State.idle,
+  getReviewsState: State.idle,
   stateMessage: "",
 };
 
@@ -107,15 +113,15 @@ export const fetchAllSubmissions = createAsyncThunk(
   }
 );
 
-interface updateSubmissionPayload {
+interface editSubmissionPayload {
   id: string;
   formData: FormData;
 }
 
-export const updateSubmission = createAsyncThunk(
-  "submissions/updateSubmission",
-  async (payload: updateSubmissionPayload, { dispatch }) => {
-    return new Promise<string>((resolve, reject) => {
+export const editSubmission = createAsyncThunk(
+  "submissions/editSubmission",
+  async (payload: editSubmissionPayload, { dispatch }) => {
+    return new Promise<any>((resolve, reject) => {
       axiosInstance
         .put(`/submissions/${payload.id}`, payload.formData)
         .then((response) => {
@@ -176,6 +182,39 @@ export const createSubmission = createAsyncThunk(
   }
 );
 
+export const reSubmission = createAsyncThunk(
+  "submissions/reSubmission",
+  async (payload: { id: string; formData: FormData }, { dispatch }) => {
+    return new Promise<string>((resolve, reject) => {
+      axiosInstance
+        .post(`/submissions/${payload.id}/resubmit`, payload.formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: SnackMessage.success.reSubmission,
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.reSubmission
+                  : String(error.response?.data?.message),
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
 export const deleteSubmission = createAsyncThunk(
   "submissions/deleteSubmission",
   async (id: string, { dispatch }) => {
@@ -197,6 +236,107 @@ export const deleteSubmission = createAsyncThunk(
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? SnackMessage.error.deleteSubmission
+                  : String(error.response?.data?.message),
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
+export const getReviews = createAsyncThunk(
+  "submissions/getReviews",
+  async (id: string, { dispatch }) => {
+    return new Promise<Submission[]>((resolve, reject) => {
+      axiosInstance
+        .get(`/submissions/${id}/reviews`)
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.getReviews
+                  : String(error.response?.data?.message),
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
+interface assignReviewersPayload {
+  id: string;
+  reviewers: string[];
+}
+
+export const addReviewers = createAsyncThunk(
+  "submissions/addReviewers",
+  async (payload: assignReviewersPayload, { dispatch }) => {
+    return new Promise<string>((resolve, reject) => {
+      axiosInstance
+        .post(`/submissions/${payload.id}/assign-reviewers`, {
+          reviewers: payload.reviewers,
+        })
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: SnackMessage.success.assignReviewers,
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.assignReviewers
+                  : String(error.response?.data?.message),
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
+interface addReviewsPayload {
+  id: string;
+  reviews: FormData;
+}
+
+export const addReviews = createAsyncThunk(
+  "submissions/addReviews",
+  async (payload: addReviewsPayload, { dispatch }) => {
+    return new Promise<string>((resolve, reject) => {
+      axiosInstance
+        .post(`/submissions/${payload.id}/review`, payload.reviews, {
+          // headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: SnackMessage.success.addReviews,
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.addReviews
                   : String(error.response?.data?.message),
               type: "error",
             })
@@ -230,11 +370,12 @@ const submissionsSlice = createSlice({
       })
 
       // Update submission
-      .addCase(updateSubmission.pending, (state) => {
+      .addCase(editSubmission.pending, (state) => {
         state.updateState = State.loading;
         state.stateMessage = "Updating submission...";
       })
-      .addCase(updateSubmission.fulfilled, (state, action) => {
+
+      .addCase(editSubmission.fulfilled, (state, action) => {
         state.updateState = State.success;
         state.stateMessage = "Submission updated successfully.";
 
@@ -243,16 +384,12 @@ const submissionsSlice = createSlice({
         );
 
         if (updatedIndex !== -1) {
-          const { formData } = action.meta.arg;
+          const { submission } = action.payload.body;
 
-          // Extract and parse relevant fields from FormData
-          const updatedSubmission: Partial<Submission> = {
-            title: formData.get("title") as string,
-            type: formData.get("type") as string,
-            authors: JSON.parse(formData.get("authors") as string),
-          };
+          // Parse the submission data from the response
+          const updatedSubmission = JSON.parse(submission);
 
-          // Update only the fields that exist in the formData
+          // Update only the fields that exist in the updatedSubmission
           state.userSubmissions[updatedIndex] = {
             ...state.userSubmissions[updatedIndex],
             ...updatedSubmission,
@@ -260,13 +397,10 @@ const submissionsSlice = createSlice({
           };
         }
       })
-      .addCase(
-        updateSubmission.rejected,
-        (state, action: PayloadAction<any>) => {
-          state.updateState = State.failed;
-          state.stateMessage = "Failed to update submission.";
-        }
-      )
+      .addCase(editSubmission.rejected, (state) => {
+        state.updateState = State.failed;
+        state.stateMessage = "Failed to update submission.";
+      })
 
       // create submission
       .addCase(createSubmission.pending, (state) => {
@@ -292,10 +426,14 @@ const submissionsSlice = createSlice({
         state.userSubmissions = state.userSubmissions.filter(
           (s) => s.id !== deletedIndex
         );
-
         state.updateState = State.success;
         state.stateMessage = "Submission deleted successfully.";
       })
+      .addCase(deleteSubmission.rejected, (state) => {
+        state.updateState = State.failed;
+        state.stateMessage = "Failed to delete submission.";
+      })
+
       //fetch all submissions
       .addCase(fetchAllSubmissions.pending, (state) => {
         state.fetchState = State.loading;
@@ -309,6 +447,31 @@ const submissionsSlice = createSlice({
       .addCase(fetchAllSubmissions.rejected, (state) => {
         state.fetchState = State.failed;
         state.stateMessage = "Failed to fetch submissions.";
+      })
+      .addCase(addReviewers.pending, (state) => {
+        state.assignReviewersState = State.loading;
+        state.stateMessage = "Assigning reviewers...";
+      })
+      .addCase(addReviewers.fulfilled, (state) => {
+        state.assignReviewersState = State.success;
+        state.stateMessage = "Reviewers assigned successfully.";
+      })
+      .addCase(addReviewers.rejected, (state) => {
+        state.assignReviewersState = State.failed;
+        state.stateMessage = "Failed to assign reviewers.";
+      })
+      .addCase(getReviews.pending, (state) => {
+        state.getReviewsState = State.loading;
+        state.stateMessage = "Fetching reviews...";
+      })
+      .addCase(getReviews.fulfilled, (state, action) => {
+        state.getReviewsState = State.success;
+        state.reviewersSubmissions = action.payload;
+        state.stateMessage = "Reviews fetched successfully.";
+      })
+      .addCase(getReviews.rejected, (state) => {
+        state.getReviewsState = State.failed;
+        state.stateMessage = "Failed to fetch reviews.";
       });
   },
 });

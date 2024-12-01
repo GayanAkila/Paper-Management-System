@@ -22,13 +22,14 @@ import Papers from "./pages/paperManagement";
 import Certificates from "./pages/certificates";
 import Letters from "./pages/letters";
 import Settings from "./pages/settings";
+import axiosInstance from "./services/axiosInstance";
 
 // Route configuration with role-based access
 const routes = [
   {
     path: "/dashboard",
     element: <Dashboard />,
-    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
+    roles: [UserRole.STUDENT],
   },
   {
     path: "/admin-dashboard",
@@ -43,7 +44,7 @@ const routes = [
   {
     path: "/feedback-panel",
     element: <FeedbackPanel />,
-    roles: [UserRole.ADMIN, UserRole.REVIEWER],
+    roles: [UserRole.REVIEWER],
   },
   {
     path: "/users",
@@ -53,22 +54,22 @@ const routes = [
   {
     path: "/papers",
     element: <Papers />,
-    roles: [UserRole.ADMIN, UserRole.REVIEWER],
+    roles: [UserRole.ADMIN],
   },
   {
     path: "/certificates",
     element: <Certificates />,
-    roles: [UserRole.ADMIN, UserRole.STUDENT],
+    roles: [UserRole.ADMIN],
   },
   {
     path: "/letters",
     element: <Letters />,
-    roles: [UserRole.ADMIN, UserRole.STUDENT],
+    roles: [UserRole.ADMIN],
   },
   {
     path: "/settings",
     element: <Settings />,
-    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
+    roles: [UserRole.ADMIN],
   },
 ];
 
@@ -120,39 +121,39 @@ const App = () => {
   const dispatch = useAppDispatch();
   const { user, loading } = useAppSelector((state) => state.auth);
 
+  // Inside App.tsx useEffect
   useEffect(() => {
-    const token = localStorage.getItem("idToken");
-    const refreshToken = localStorage.getItem("refreshToken");
-  
-    if (token) {
-      const fetchUserProfile = async () => {
-        try {
-          const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/auth/me`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const userProfile: UserProfile = {
-            uid: response.data.uid,
-            email: response.data.email,
-            displayName: response.data.name,
-            role: response.data.role,
-            idToken: token,
-            refreshToken: refreshToken || "",
-          };
-          dispatch(login(userProfile));
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
+    const fetchUserProfile = async () => {
+      try {
+        dispatch(setLoading(true));
+        const response = await axiosInstance.get("/users/me");
+        const userProfile: UserProfile = {
+          uid: response.data.uid,
+          email: response.data.email,
+          displayName: response.data.name,
+          role: response.data.role,
+          idToken: localStorage.getItem("idToken") || "",
+          refreshToken: localStorage.getItem("refreshToken") || "",
+        };
+        dispatch(login(userProfile));
+      } catch (error) {
+        // Only logout if it's an auth error
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
           dispatch(logout());
         }
-      };
+        console.error("Error fetching user profile:", error);
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
+
+    const token = localStorage.getItem("idToken");
+    if (token) {
       fetchUserProfile();
     } else {
-      dispatch(logout());
+      dispatch(setLoading(false));
     }
   }, [dispatch]);
-  
-  
 
   if (loading) {
     return <LoadingScreen />;

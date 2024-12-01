@@ -27,9 +27,12 @@ import { navItems } from "../NavItems";
 import LoadingScreen from "../LoadingScreen";
 import { UserRole } from "../../types/types";
 import { useSnackbar } from "notistack";
+import { fetchDeadlines } from "../../store/slices/settingsSlice";
+import { format } from "date-fns";
 
 const AuthenticatedLayout = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { deadlines } = useAppSelector((state) => state.settings);
   const common = useAppSelector((state) => state.common);
   const { user, loading } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
@@ -46,7 +49,9 @@ const AuthenticatedLayout = () => {
     }
   }, [common.timestamp]);
 
-  const userRole = user?.role as UserRole;
+  useEffect(() => {
+    dispatch(fetchDeadlines());
+  }, []);
 
   const filteredNavItems = navItems.filter((item) => {
     if (!user?.role) return false;
@@ -85,7 +90,9 @@ const AuthenticatedLayout = () => {
     handleClose();
   };
 
-  const drawerWidth = 250;
+  const formattedSubmissionTime = deadlines.submission
+    ? format(new Date(deadlines.submission), "Y-MMMM-d") // 'p' is the format string for time
+    : "No deadline set";
 
   return (
     <Box
@@ -127,25 +134,28 @@ const AuthenticatedLayout = () => {
           />
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {/* <IconButton color="primary">
-              <Badge badgeContent={4} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton> */}
-
             <Chip
-              onClick={handleMenu}
+              label={`submission : ${formattedSubmissionTime}`}
               sx={{
-                height: "auto",
-                padding: "8px",
+                height: 40,
+                width: "auto",
                 backgroundColor: "#EFF0F3",
                 "&:hover": {
                   backgroundColor: "#EFF0F3",
                 },
                 borderRadius: "24px",
-                "& .MuiChip-label": {
-                  padding: 0,
+              }}
+            />
+            <Chip
+              onClick={handleMenu}
+              sx={{
+                height: 40,
+                width: "auto",
+                backgroundColor: "#EFF0F3",
+                "&:hover": {
+                  backgroundColor: "#EFF0F3",
                 },
+                borderRadius: "24px",
               }}
               label={
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -226,7 +236,7 @@ const AuthenticatedLayout = () => {
           variant="permanent"
           sx={{
             width: 250,
-            height: `calc(100vh - 64px)`, // Full height minus AppBar
+            height: `auto`, // Full height minus AppBar
             flexShrink: 0,
             "& .MuiDrawer-paper": {
               width: 250,
@@ -299,12 +309,11 @@ const AuthenticatedLayout = () => {
         {/* Main Content */}
         <Box
           sx={{
-            flex: 1,
-            px: 4,
-            py: 3,
-            height: `calc(100vh - 64px)`, // Full height minus AppBar
-            overflow: "hidden",
-            display: "flex",
+            flexGrow: 1,
+            height: "100%",
+            width: "100vw",
+            p: 3,
+            overflow: "auto",
           }}
         >
           <Box
@@ -313,7 +322,10 @@ const AuthenticatedLayout = () => {
               bgcolor: "white",
               borderRadius: 2,
               p: 3,
-              // overflow: "auto", // This enables scrolling for content
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             <Outlet />

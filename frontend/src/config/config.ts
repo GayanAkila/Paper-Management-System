@@ -8,3 +8,6 @@ export const firebaseConfig = {
   // measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 } as const;
 
+export const appConfig = {
+  defaultPassword: process.env.REACT_APP_DEFAULT_PASSWORD,
+} as const;

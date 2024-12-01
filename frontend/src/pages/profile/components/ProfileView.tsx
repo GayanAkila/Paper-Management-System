@@ -13,8 +13,7 @@ interface ProfileViewProps {
   profileData: {
     name: string;
     email: string;
-    phoneNo: string;
-    registrationNo: string;
+
     profilePicture?: string;
   };
 }
@@ -109,16 +108,6 @@ const ProfileView = ({ profileData }: ProfileViewProps) => {
           />
           <InfoRow label="Name" value={profileData.name} isAvatar={false} />
           <InfoRow label="Email" value={profileData.email} isAvatar={false} />
-          <InfoRow
-            label="Phone No"
-            value={profileData.phoneNo}
-            isAvatar={false}
-          />
-          <InfoRow
-            label="Registration No"
-            value={profileData.registrationNo}
-            isAvatar={false}
-          />
         </Box>
       </Paper>
     </Container>

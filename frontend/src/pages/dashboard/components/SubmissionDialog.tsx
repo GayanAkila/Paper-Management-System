@@ -19,29 +19,26 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import { Close, Add, Remove, Upload } from "@mui/icons-material";
-import { Author, SubmissionType } from "../../../types/types";
-import { Submission } from "../../../store/slices/submissionSlice";
+import { SubmissionType } from "../../../types/types";
+import { Author, Submission } from "../../../store/slices/submissionSlice";
+import { useAppSelector } from "../../../store/store";
 
 interface SubmissionDialogProps {
   open: boolean;
   onClose: () => void;
   mode: "create" | "edit";
-  initialData?: Submission | null;
-  onSubmit: (data: {
-    type: string;
-    title: string;
-    file?: File;
-    authors: Author[];
-  }) => void;
+  submission?: Partial<Submission> | null;
+  onSubmit: (data: Partial<Submission>, file?: File) => void;
 }
 
 const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
   open,
   onClose,
   mode,
-  initialData,
+  submission,
   onSubmit,
 }) => {
+  const { deadlines } = useAppSelector((state) => state.settings);
   const [type, setType] = useState<string>(SubmissionType.research);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -51,13 +48,13 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
 
   // Initialize form with data when editing
   useEffect(() => {
-    if (mode === "edit" && initialData) {
+    if (mode === "edit" && submission) {
       // Set type by matching the exact string
-      setType(initialData.type);
-      setTitle(initialData.title);
-      setAuthors(initialData.authors);
-      if (initialData.fileUrl) {
-        setCurrentFileName(initialData.fileUrl.split("/").pop() || "");
+      setType(submission.type || SubmissionType.research);
+      setTitle(submission.title || "");
+      setAuthors(submission.authors || [{ name: "", email: "" }]);
+      if (submission.fileUrl) {
+        setCurrentFileName(submission.fileUrl.split("/").pop() || "");
       }
     } else {
       // Reset form for create mode
@@ -69,11 +66,10 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
     }
     // Reset errors when dialog opens/closes
     setErrors({});
-  }, [mode, initialData, open]);
+  }, [mode, submission, open]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
-    console.log("selectedFIle", selectedFile);
     if (selectedFile) {
       if (selectedFile.type === "application/pdf") {
         setFile(selectedFile);
@@ -163,17 +159,18 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
   };
 
   const handleSubmit = async () => {
-    console.log("file", file);
     if (validateForm()) {
-      onSubmit({
-        type,
-        title: title.trim(),
-        file: file || undefined,
-        authors: authors.map((author) => ({
-          name: author.name.trim(),
-          email: author.email.trim(),
-        })),
-      });
+      onSubmit(
+        {
+          type,
+          title: title.trim(),
+          authors: authors.map((author) => ({
+            name: author.name.trim(),
+            email: author.email.trim(),
+          })),
+        },
+        file || undefined
+      );
       handleClose();
     }
   };

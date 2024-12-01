@@ -6,36 +6,6 @@ export enum Status {
   underReview = "under review",
 }
 
-export interface Author {
-  name: string;
-  email: string;
-}
-
-export interface Comment {
-  reviewer: string;
-  comment: string;
-  date: string;
-  document: string;
-}
-
-export interface Feedback {
-  comments: Comment[];
-  finalDecision: string;
-}
-
-// export interface Submission {
-//   id: string;
-//   title: string;
-//   authors: Author[];
-//   type: string;
-//   status: string;
-//   submittedOn: string;
-//   document: string;
-//   feedback?: Feedback;
-//   studentEmail: string;
-//   reviewerEmail: string[];
-// }
-
 export enum SubmissionType {
   research = "Research Paper",
   project = "Project",
@@ -83,4 +53,12 @@ export enum ConfirmationType {
   send = "send",
   upload = "upload",
   accept = "accept",
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+  role: string;
 }

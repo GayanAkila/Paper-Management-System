@@ -2,6 +2,8 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import submissionsReducer from "./slices/submissionSlice";
 import commonReducer from "./slices/commonSlice";
+import userReducer from "./slices/userSlice";
+import settingsReducer from "./slices/settingsSlice";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 export const store = configureStore({
@@ -9,6 +11,8 @@ export const store = configureStore({
     auth: authReducer,
     submissions: submissionsReducer,
     common: commonReducer,
+    user: userReducer,
+    settings: settingsReducer,
   },
 });
 

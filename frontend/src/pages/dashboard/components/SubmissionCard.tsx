@@ -35,6 +35,7 @@ import { formatDate } from "../../../utils/utils";
 interface SubmissionCardProps {
   submission: Submission;
   onEdit?: () => void;
+  onResubmit?: () => void;
   onDelete?: () => void;
 }
 
@@ -42,6 +43,7 @@ const SubmissionCard = ({
   submission,
   onEdit,
   onDelete,
+  onResubmit,
 }: SubmissionCardProps) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
@@ -70,9 +72,9 @@ const SubmissionCard = ({
         return "#DEF8EE";
       case "rejected":
         return "rgba(28, 28, 28, 0.05)";
-      case "approved with changes":
+      case "needs revision":
         return "#FFFBD4";
-      case "under review":
+      case "in review":
         return "#E2F5FF";
       default:
         return "#EFF6FF";
@@ -87,9 +89,9 @@ const SubmissionCard = ({
         return "#4AA785";
       case "rejected":
         return "rgba(28, 28, 28, 0.4)";
-      case "approved with changes":
+      case "needs revision":
         return "#FFC555";
-      case "under review":
+      case "in review":
         return "#59A8D4";
       default:
         return "#EFF6FF";
@@ -157,29 +159,47 @@ const SubmissionCard = ({
               </ListItemIcon>
               Download
             </MenuItem>
-            <MenuItem
-              onClick={() => {
-                onEdit?.();
-                handleMenuClose();
-              }}
-            >
-              <ListItemIcon>
-                <EditIcon fontSize="small" />
-              </ListItemIcon>
-              Edit
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                onDelete?.();
-                handleMenuClose();
-              }}
-              sx={{ color: "error.main" }}
-            >
-              <ListItemIcon>
-                <DeleteIcon fontSize="small" color="error" />
-              </ListItemIcon>
-              Delete
-            </MenuItem>
+            {submission.status === "submitted" && (
+              <MenuItem
+                onClick={() => {
+                  onEdit?.();
+                  handleMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <EditIcon fontSize="small" />
+                </ListItemIcon>
+                Edit
+              </MenuItem>
+            )}
+            {submission.status === "needs revision" && (
+              <MenuItem
+                onClick={() => {
+                  onResubmit?.();
+                  handleMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <EditIcon fontSize="small" />
+                </ListItemIcon>
+                Resubmit
+              </MenuItem>
+            )}
+
+            {submission.status === "submitted" && (
+              <MenuItem
+                onClick={() => {
+                  onDelete?.();
+                  handleMenuClose();
+                }}
+                sx={{ color: "error.main" }}
+              >
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" color="error" />
+                </ListItemIcon>
+                Delete
+              </MenuItem>
+            )}
           </Menu>
         </Box>
         <Divider sx={{ mb: 2 }} />
@@ -303,7 +323,7 @@ const SubmissionCard = ({
             <Typography color="text.secondary" sx={{ width: 100 }}>
               Feedback
             </Typography>
-            {submission.feedback?.comments?.length ?? 0 > 0 ? (
+            {submission.reviews?.comments?.length ?? 0 > 0 ? (
               <Link
                 component="button"
                 onClick={handleFeedbackClick}
@@ -359,7 +379,7 @@ const SubmissionCard = ({
         <Divider />
         <DialogContent>
           <List sx={{ mb: 2 }}>
-            {submission.feedback?.comments.map((comment, index) => (
+            {submission.reviews?.comments.map((comment, index) => (
               <ListItem
                 key={index}
                 sx={{
@@ -397,11 +417,11 @@ const SubmissionCard = ({
                     {comment.reviewer}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {comment.date}
+                    {formatDate(comment.submittedAt)}
                   </Typography>
                 </Box>
                 <Typography variant="body2" sx={{ mb: 2 }}>
-                  {comment.comment}
+                  {comment.comments}
                 </Typography>
                 {comment.fileUrl && (
                   <Button

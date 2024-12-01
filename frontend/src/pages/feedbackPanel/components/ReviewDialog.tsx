@@ -1,30 +1,24 @@
+import React, { useEffect, useState } from "react";
 import {
-  Box,
-  Typography,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  IconButton as MuiIconButton,
-  Stack,
-  InputLabel,
-  MenuItem,
   Select,
-  Alert,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Stack,
+  Typography,
+  IconButton,
   Divider,
+  Box,
 } from "@mui/material";
-import {
-  Download as DownloadIcon,
-  RateReview as ReviewIcon,
-  Close as CloseIcon,
-  AttachFile as AttachFileIcon,
-} from "@mui/icons-material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useEffect, useMemo, useState } from "react";
+import CloseIcon from "@mui/icons-material/Close";
 import { Submission } from "../../../store/slices/submissionSlice";
+import { useAppSelector } from "../../../store/store";
 
 interface ReviewDialogProps {
   open: boolean;
@@ -35,80 +29,58 @@ interface ReviewDialogProps {
     file?: File;
   }) => void;
   submission: Submission;
-  currentReviewer: string;
 }
 
-const ReviewDialog = ({
+const ReviewDialog: React.FC<ReviewDialogProps> = ({
   open,
   onClose,
   onSubmit,
   submission,
-  currentReviewer,
-}: ReviewDialogProps) => {
+}) => {
+  const { user } = useAppSelector((state) => state.auth);
   const [comment, setComment] = useState("");
   const [decision, setDecision] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  const currentReviewerFeedback = useMemo(
-    () =>
-      submission.feedback?.comments.find(
-        (comment) => comment.reviewer === currentReviewer
-      ),
-    [submission, currentReviewer]
-  );
-
+  console.log(submission);
   useEffect(() => {
-    if (open && currentReviewerFeedback) {
-      setComment(currentReviewerFeedback.comment);
-      setDecision(submission.feedback?.finalDecision || "");
-      setFile(null);
-    } else {
-      setComment("");
-      setDecision("");
-      setFile(null);
+    if (
+      submission &&
+      submission.reviews &&
+      user &&
+      submission.reviews.finalDecision
+    ) {
+      const userReview = submission.reviews.comments.find(
+        (review) => review.reviewer === user.email
+      );
+      setComment(userReview ? userReview.comments : "");
+      setDecision(submission.reviews.finalDecision || "");
     }
-  }, [open, currentReviewerFeedback, submission.feedback?.finalDecision]);
+
+    setFile(null);
+  }, [open, submission, user]);
 
   const handleSubmit = () => {
-    if (!comment || !decision) return;
-
     onSubmit({
       comment,
       decision,
       file: file || undefined,
     });
-
-    // Reset form
     setComment("");
     setDecision("");
     setFile(null);
     onClose();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const selectedFile = event.target.files[0];
-      if (selectedFile.type === "application/pdf") {
-        setFile(selectedFile);
-      } else {
-        // Show error for invalid file type
-        alert("Please upload only PDF files");
-      }
-    }
+  const handleClose = () => {
+    setComment("");
+    setDecision("");
+    setFile(null);
+    onClose();
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-        },
-      }}
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle
         sx={{
           display: "flex",
@@ -119,111 +91,71 @@ const ReviewDialog = ({
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Review Submission
+          Submit Review
         </Typography>
-        <MuiIconButton onClick={onClose} size="small">
+        <IconButton onClick={onClose} size="small">
           <CloseIcon />
-        </MuiIconButton>
+        </IconButton>
       </DialogTitle>
       <Divider />
-      <DialogContent sx={{ p: 3 }}>
-        <Stack spacing={3}>
-          {/* Show existing feedback if available */}
-          {currentReviewerFeedback && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="subtitle2">Your Previous Review:</Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {currentReviewerFeedback.comment}
-              </Typography>
-              {currentReviewerFeedback.fileUrl && (
-                <Button
-                  startIcon={<DownloadIcon />}
-                  size="small"
-                  onClick={() => {
-                    if (currentReviewerFeedback.fileUrl) {
-                      window.open(currentReviewerFeedback.fileUrl, "_blank");
-                    }
-                  }}
-                  sx={{ mt: 1 }}
-                >
-                  View Previous Attachment
-                </Button>
-              )}
-            </Alert>
-          )}
+      <DialogContent>
+        <Stack spacing={3} sx={{ mt: 2 }}>
+          <Typography>
+            <strong>Paper:</strong> {submission?.title}
+          </Typography>
 
-          {/* Review Form */}
-          <TextField
-            label="Review Comments"
-            multiline
-            rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            fullWidth
-            required
-            placeholder="Enter your review comments here..."
-          />
-
-          <FormControl required fullWidth>
-            <InputLabel>Final Decision</InputLabel>
+          <FormControl fullWidth required>
+            <InputLabel>Decision</InputLabel>
             <Select
               value={decision}
               onChange={(e) => setDecision(e.target.value)}
-              label="Final Decision"
+              label="Decision"
             >
-              <MenuItem value="Approved">Approve</MenuItem>
-              <MenuItem value="Approved with changes">
-                Approve with Changes
-              </MenuItem>
-              <MenuItem value="Rejected">Reject</MenuItem>
+              <MenuItem value="approve">Approve</MenuItem>
+              <MenuItem value="needs revision">Needs Revision</MenuItem>
+              <MenuItem value="reject">Reject</MenuItem>
             </Select>
           </FormControl>
 
-          <Box>
+          <TextField
+            required
+            multiline
+            rows={4}
+            label="Comments"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            fullWidth
+          />
+
+          <Button variant="outlined" component="label" fullWidth>
+            Upload Review File (Optional)
             <input
-              accept="application/pdf"
-              id="file-input"
               type="file"
               hidden
-              onChange={handleFileChange}
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
             />
-            <label htmlFor="file-input">
-              <Button
-                component="span"
-                startIcon={<AttachFileIcon />}
-                variant="outlined"
-                sx={{ mr: 2 }}
-              >
-                Attach File
-              </Button>
-            </label>
-            {file && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Selected file: {file.name}
-              </Typography>
-            )}
-          </Box>
+          </Button>
+          {file && (
+            <Typography variant="body2" color="text.secondary">
+              Selected file: {file.name}
+            </Typography>
+          )}
         </Stack>
+        <Box
+          sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 3 }}
+        >
+          <Button onClick={handleClose} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={!decision || !comment}
+          >
+            Submit Review
+          </Button>
+        </Box>
       </DialogContent>
-
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          color="inherit"
-          sx={{ borderRadius: 1.5 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={!comment || !decision}
-          sx={{ borderRadius: 1.5 }}
-        >
-          Submit Review
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

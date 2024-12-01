@@ -17,7 +17,7 @@ export const navItems: NavItem[] = [
     title: "Dashboard",
     path: "/dashboard",
     icon: React.createElement(Dashboard),
-    roles: [UserRole.STUDENT, UserRole.ADMIN],
+    roles: [UserRole.STUDENT],
   },
   {
     title: "Dashboard",
@@ -25,17 +25,12 @@ export const navItems: NavItem[] = [
     icon: React.createElement(Dashboard),
     roles: [UserRole.ADMIN],
   },
-  {
-    title: "Profile",
-    path: "/profile",
-    icon: React.createElement(Person),
-    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
-  },
+
   {
     title: "Feedback Panel",
     path: "/feedback-panel",
     icon: React.createElement(Reviews),
-    roles: [UserRole.ADMIN, UserRole.REVIEWER],
+    roles: [UserRole.REVIEWER],
   },
   {
     title: "Users",
@@ -47,7 +42,7 @@ export const navItems: NavItem[] = [
     title: "Papers",
     path: "/papers",
     icon: React.createElement(Article),
-    roles: [UserRole.ADMIN, UserRole.REVIEWER],
+    roles: [UserRole.ADMIN],
   },
   {
     title: "Certificates",
@@ -60,6 +55,12 @@ export const navItems: NavItem[] = [
     path: "/letters",
     icon: React.createElement(LocalPostOffice),
     roles: [UserRole.ADMIN],
+  },
+  {
+    title: "Profile",
+    path: "/profile",
+    icon: React.createElement(Person),
+    roles: [UserRole.ADMIN, UserRole.REVIEWER, UserRole.STUDENT],
   },
   {
     title: "Settings",

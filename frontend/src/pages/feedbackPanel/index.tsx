@@ -1,7 +1,7 @@
 import { Box, Typography, Chip, IconButton } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ReviewIcon from "@mui/icons-material/RateReview";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ReviewDialog from "./components/ReviewDialog";
 import {
   DataGrid,
@@ -9,63 +9,106 @@ import {
   GridRenderCellParams,
   GridToolbar,
 } from "@mui/x-data-grid";
-import { submissionsData } from "../../tempData";
-import { useAppSelector } from "../../store/store";
-import { Submission } from "../../store/slices/submissionSlice";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+import {
+  addReviews,
+  fetchAllSubmissions,
+  Submission,
+} from "../../store/slices/submissionSlice";
+import { State } from "../../types/types";
 
 const FeedbackPanel = () => {
+  const dispatch = useAppDispatch();
+  const { allSubmissions, fetchState } = useAppSelector(
+    (state) => state.submissions
+  );
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
   const user = useAppSelector((state) => state.auth.user);
 
-  const reviewerPapers = useMemo(
-    () =>
-      submissionsData.filter((submission) =>
-        submission.reviewerEmail.includes(user?.email as string)
-      ),
-    [user?.email, submissionsData]
+  useEffect(() => {
+    dispatch(fetchAllSubmissions());
+  }, []);
+
+  const reviewerPapers = useMemo(() => {
+    if (!user?.email || !Array.isArray(allSubmissions)) {
+      console.error("User email or allSubmissions array is not defined");
+      return [];
+    }
+
+    const filteredSubmissions = allSubmissions.filter((submission) => {
+      if (!Array.isArray(submission.reviewers)) {
+        console.error(
+          "Reviewers field is not an array in submission:",
+          submission
+        );
+        return false;
+      }
+      return submission.reviewers.includes(user.email);
+    });
+    return filteredSubmissions;
+  }, [user?.email, allSubmissions]);
+
+  const onDownload = (paper: Partial<Submission>) => {
+    window.open(paper.fileUrl!, "_blank");
+  };
+
+  const handleReviewClick = useCallback(
+    (submission: Submission) => {
+      setSelectedSubmission(submission);
+      setReviewDialogOpen(true);
+    },
+    [selectedSubmission]
   );
 
-  const onDownload = (id: string) => {
-    console.log(`Downloading item with id: ${id}`);
-  };
-
-  const handleReviewClick = (submission: Submission) => {
-    setSelectedSubmission(submission);
-    setReviewDialogOpen(true);
-  };
-
-  const handleReviewSubmit = (reviewData: {
+  const handleReviewSubmit = async (reviewData: {
     comment: string;
     decision: string;
     file?: File;
   }) => {
-    console.log("Review submitted:", {
-      submission: selectedSubmission,
-      ...reviewData,
-    });
-    // Implement your review submission logic here
+    if (!selectedSubmission?.id || !user?.email) return;
+
+    const formData = new FormData();
+    formData.append("comments", reviewData.comment);
+    formData.append("decision", reviewData.decision);
+
+    if (reviewData.file) {
+      formData.append("file", reviewData.file);
+    }
+
+    try {
+      await dispatch(
+        addReviews({
+          id: selectedSubmission.id,
+          reviews: formData,
+        })
+      ).unwrap();
+      setReviewDialogOpen(false);
+      dispatch(fetchAllSubmissions());
+    } catch (error) {
+      console.error("Error submitting review:", error);
+    }
   };
 
   const getStatusChip = (status: string) => {
     const statusStyles = {
-      Pending: {
+      "in review": {
         bgcolor: "#EEF2FF",
         color: "#818CF8",
         label: "Pending",
       },
-      Approved: {
+      approved: {
         bgcolor: "#ECFDF5",
         color: "#34D399",
         label: "Approved",
       },
-      "Approved with changes": {
+      "needs revision": {
         bgcolor: "#FEF3C7",
         color: "#F59E0B",
         label: "Approved with changes",
       },
-      Rejected: {
+      rejected: {
         bgcolor: "#FEE2E2",
         color: "#EF4444",
         label: "Rejected",
@@ -73,7 +116,8 @@ const FeedbackPanel = () => {
     };
 
     const style =
-      statusStyles[status as keyof typeof statusStyles] || statusStyles.Pending;
+      statusStyles[status as keyof typeof statusStyles] ||
+      statusStyles["in review"];
 
     return (
       <Chip
@@ -100,18 +144,36 @@ const FeedbackPanel = () => {
       headerClassName: "datagrid-header",
     },
     {
+      field: "authors",
+      headerName: "Author/s",
+      flex: 1,
+      headerClassName: "datagrid-header",
+      renderCell: (params) => {
+        const authors = params.value;
+        const authorNames = Array.isArray(authors)
+          ? authors.map((author) => author.name).join(", ")
+          : "N/A";
+
+        return <>{authorNames}</>;
+      },
+    },
+    {
       field: "type",
       headerName: "Type",
       flex: 1,
       headerClassName: "datagrid-header",
     },
     {
-      field: "submittedOn",
+      field: "createdAt",
       headerName: "Submission Date",
       headerAlign: "center",
       align: "center",
       flex: 1,
       headerClassName: "datagrid-header",
+      renderCell: (params: GridRenderCellParams) => {
+        const date = new Date(params.value as string);
+        return date.toLocaleDateString();
+      },
     },
     {
       field: "status",
@@ -143,7 +205,7 @@ const FeedbackPanel = () => {
         >
           <IconButton
             size="small"
-            onClick={() => onDownload(params.row.id)}
+            onClick={() => onDownload(params.row)}
             sx={{ color: (theme) => theme.palette.background.icon }}
           >
             <DownloadIcon fontSize="small" />
@@ -183,6 +245,7 @@ const FeedbackPanel = () => {
         <DataGrid
           rows={reviewerPapers}
           columns={columns}
+          loading={fetchState === State.loading}
           pageSizeOptions={[10, 25, 50]}
           initialState={{
             pagination: {
@@ -191,6 +254,7 @@ const FeedbackPanel = () => {
           }}
           disableRowSelectionOnClick
           disableColumnMenu
+          getRowId={(row) => row.id}
           slots={{ toolbar: GridToolbar }}
           slotProps={{
             toolbar: {
@@ -210,7 +274,6 @@ const FeedbackPanel = () => {
           onClose={() => setReviewDialogOpen(false)}
           onSubmit={handleReviewSubmit}
           submission={selectedSubmission}
-          currentReviewer={user?.email}
         />
       )}
     </Box>

@@ -1,9 +1,15 @@
 import { Box, Stack, Typography } from "@mui/material";
 import Notification from "./components/Notification";
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import StatCard from "./components/StatCard";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+import { fetchAllSubmissions } from "../../store/slices/submissionSlice";
+import { fetchAllUsers } from "../../store/slices/userSlice";
 
 const AdminDashboard = () => {
+  const dispatch = useAppDispatch();
+  const { users } = useAppSelector((state) => state.user);
+  const { allSubmissions } = useAppSelector((state) => state.submissions);
   const [notifications, setNotifications] = React.useState([
     {
       id: 1,
@@ -24,6 +30,24 @@ const AdminDashboard = () => {
         "The paper titled 'Blockchain for Business' has been rejected by both reviewers. Please notify the author and remove the submission from the system.",
     },
   ]);
+
+  useEffect(() => {
+    dispatch(fetchAllUsers());
+    dispatch(fetchAllSubmissions());
+  }, []);
+
+  const noOfSubmissions = useMemo(
+    () => allSubmissions.length,
+    [allSubmissions]
+  );
+  const noOfReviewers = useMemo(
+    () => users.filter((u) => u.role === "reviewer").length,
+    [users]
+  );
+  const noOfPendingAssignments = useMemo(
+    () => allSubmissions.filter((s) => s.status === "submitted").length,
+    [allSubmissions]
+  );
 
   const handleCloseNotification = (notificationId: number) => {
     setNotifications(notifications.filter((n) => n.id !== notificationId));
@@ -61,9 +85,9 @@ const AdminDashboard = () => {
           mb: 4,
         }}
       >
-        <StatCard value={75} label="Total Submissions" />
-        <StatCard value={15} label="Active Reviewers" />
-        <StatCard value={50} label="Pending Assignment" />
+        <StatCard value={noOfSubmissions} label="Total Submissions" />
+        <StatCard value={noOfReviewers} label="Active Reviewers" />
+        <StatCard value={noOfPendingAssignments} label="Pending Assignment" />
       </Box>
 
       {/* Notifications Section */}

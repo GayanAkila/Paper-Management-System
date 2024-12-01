@@ -161,6 +161,7 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
           />
 
           <FormControl error={!!errors.type}>
+            
             <FormLabel required>User Type</FormLabel>
             <RadioGroup
               value={formData.type}

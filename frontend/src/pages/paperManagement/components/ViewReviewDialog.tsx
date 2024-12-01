@@ -9,31 +9,25 @@ import {
   IconButton,
   Stack,
   Chip,
+  ListItem,
+  Avatar,
+  List,
+  Divider,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   Download as DownloadIcon,
 } from "@mui/icons-material";
+import { Submission } from "../../../store/slices/submissionSlice";
+import { formatDate } from "../../../utils/utils";
 
 interface ViewReviewDialogProps {
   open: boolean;
   onClose: () => void;
-  reviewData: {
-    title: string;
-    comment: string;
-    decision: string;
-    attachmentUrl?: string;
-    attachmentName?: string;
-    reviewer: string;
-    reviewDate: string;
-  };
+  paper: Partial<Submission>;
 }
 
-const ViewReviewDialog = ({
-  open,
-  onClose,
-  reviewData,
-}: ViewReviewDialogProps) => {
+const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
   const getDecisionChip = (decision: string) => {
     const styles = {
       Approved: {
@@ -86,7 +80,7 @@ const ViewReviewDialog = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid #E2E8F0",
+
           p: 2,
         }}
       >
@@ -97,7 +91,7 @@ const ViewReviewDialog = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
+      <Divider />
       <DialogContent sx={{ p: 3 }}>
         <Stack spacing={3}>
           <Box>
@@ -105,16 +99,7 @@ const ViewReviewDialog = ({
               Paper Title
             </Typography>
             <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
-              {reviewData.title}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Reviewer
-            </Typography>
-            <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
-              {reviewData.reviewer}
+              {paper.title}
             </Typography>
           </Box>
 
@@ -126,96 +111,85 @@ const ViewReviewDialog = ({
             >
               Decision
             </Typography>
-            {getDecisionChip(reviewData.decision)}
+            {getDecisionChip(paper.reviews?.finalDecision || "submitted")}
           </Box>
 
-          <Box>
-            <Typography variant="subtitle2" color="text.secondary">
-              Review Comments
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                mt: 1,
-                p: 2,
-                bgcolor: "#F8FAFC",
-                borderRadius: 1,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {reviewData.comment}
-            </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              borderRadius: 1,
+              p: 1,
+              bgcolor: "white",
+            }}
+          >
+            <List sx={{ mb: 2 }}>
+              {paper.reviews?.comments.map((comment, index) => (
+                <ListItem
+                  key={index}
+                  sx={{
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    bgcolor: (theme) => theme.palette.background.default,
+                    borderRadius: 1,
+                    mb: 2,
+                    p: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      color="primary"
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          fontSize: "0.75rem",
+                          bgcolor: "primary.main",
+                        }}
+                      >
+                        {comment.reviewer.charAt(0)}
+                      </Avatar>
+                      {comment.reviewer}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(comment.submittedAt)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    {comment.comments}
+                  </Typography>
+                  {/* {comment.fileUrl && (
+                    <Button
+                      startIcon={<DocumentIcon />}
+                      variant="outlined"
+                      size="small"
+                      onClick={() => window.open(comment.fileUrl!, "_blank")}
+                      sx={{ textTransform: "none" }}
+                    >
+                      View Review Document
+                    </Button>
+                  )} */}
+                </ListItem>
+              ))}
+            </List>
           </Box>
-
-          {reviewData.attachmentUrl && (
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Attachment
-              </Typography>
-              <Button
-                startIcon={<DownloadIcon />}
-                variant="outlined"
-                onClick={() => window.open(reviewData.attachmentUrl, "_blank")}
-                sx={{
-                  textTransform: "none",
-                  borderRadius: 1.5,
-                }}
-              >
-                {reviewData.attachmentName || "Download Attachment"}
-              </Button>
-            </Box>
-          )}
-
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
-            Reviewed on {reviewData.reviewDate}
-          </Typography>
         </Stack>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button
-          onClick={onClose}
-          variant="contained"
-          sx={{ borderRadius: 1.5 }}
-        >
-          Close
-        </Button>
-      </DialogActions>
+      <DialogActions sx={{ p: 3, pt: 0 }}></DialogActions>
     </Dialog>
   );
 };
 
 export default ViewReviewDialog;
-
-// Usage Example:
-/*
-  const YourComponent = () => {
-    const [open, setOpen] = useState(false);
-    
-    const sampleReviewData = {
-      title: "The Impact of AI on Business...",
-      comment: "The paper demonstrates a thorough understanding of the subject matter. However, there are a few areas that need attention:\n\n1. The literature review section could be more comprehensive\n2. Some recent developments in the field should be included\n3. The methodology section is well-structured",
-      decision: "Approved with changes",
-      attachmentUrl: "/path/to/attachment.pdf",
-      attachmentName: "Detailed_Review.pdf",
-      reviewer: "Dr. Harsha Kumar",
-      reviewDate: "15 March 2024"
-    };
-  
-    return (
-      <>
-        <Button onClick={() => setOpen(true)}>View Review</Button>
-        
-        <ViewReviewDialog
-          open={open}
-          onClose={() => setOpen(false)}
-          reviewData={sampleReviewData}
-        />
-      </>
-    );
-  };
-  */

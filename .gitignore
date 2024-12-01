@@ -21,3 +21,6 @@ Thumbs.db
 backend/key.json
 backend/config/service-account-key.json
 backend/firebase/admin-sdk-json.local
+frontend/yarn.lock
+frontend/package-lock.json
+frontend/package-lock.json

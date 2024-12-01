@@ -130,22 +130,22 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
-
-    const existingProfile = await getUserProfile(userCredential.user.uid);
-
-    if (existingProfile) {
-      return existingProfile;
-    }
-
     const idToken = await userCredential.user.getIdToken();
     const refreshToken = userCredential.user.refreshToken;
 
-    const decodedToken: DecodedIdToken = jwtDecode(idToken);
-    const role = decodedToken.role || UserRole.STUDENT;
+    const profile: UserProfile = {
+      uid: userCredential.user.uid,
+      email: userCredential.user.email!,
+      displayName: userCredential.user.displayName || undefined,
+      photoURL: userCredential.user.photoURL || undefined,
+      role: UserRole.STUDENT, // Default role
+      idToken,
+      refreshToken,
+    };
 
-    return await createUserProfile(userCredential, idToken, refreshToken, role);
+    return profile;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new Error(`Google sign-in failed: ${error.message}`);
   }
 };
 

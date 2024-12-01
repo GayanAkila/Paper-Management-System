@@ -57,18 +57,22 @@ const Auth = () => {
     // Save tokens to local storage
     // localStorage.setItem("idToken", userProfile.idToken);
     // localStorage.setItem("refreshToken", userProfile.refreshToken);
-  
+
     dispatch(login(userProfile));
     navigate("/dashboard");
   };
-  
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
       const userProfile = await signInWithGoogle();
+      console.log("Google sign in response:", userProfile); // Add this log
+      if (!userProfile.idToken || !userProfile.refreshToken) {
+        throw new Error("Missing authentication tokens");
+      }
       handleUserAuthentication(userProfile);
     } catch (error: any) {
+      console.error("Google sign in error:", error); // Add this log
       setErrorMessage(error.message);
       enqueueSnackbar(error.message, { variant: "error" });
     } finally {
@@ -77,13 +81,12 @@ const Auth = () => {
   };
 
   const handleFormSubmit = async (data: AuthForm) => {
-    
     setErrorMessage(null);
     setLoading(true);
-  
+
     try {
       let userProfile: UserProfile;
-  
+
       if (authType === "sign-up") {
         // Use backend register API
         const registerResponse = await registerUser({
@@ -91,7 +94,7 @@ const Auth = () => {
           name: data.email,
           email: data.email,
           password: data.password,
-          role: "student", 
+          role: "student",
         });
         setAuthType("login");
         setErrorMessage("Account created successfully. Please sign in.");
@@ -106,7 +109,6 @@ const Auth = () => {
         userProfile = { ...loginResponse.user, uid: loginResponse.user.uid };
         handleUserAuthentication(userProfile);
       }
-  
     } catch (error: any) {
       console.error("Authentication error:", error);
       setErrorMessage(error.response?.data?.message || "An error occurred.");
@@ -117,7 +119,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-  
 
   return (
     <Stack

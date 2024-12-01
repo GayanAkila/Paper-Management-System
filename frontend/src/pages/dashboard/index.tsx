@@ -11,23 +11,26 @@ import { useAppDispatch, useAppSelector } from "../../store/store";
 import SubmissionDialog from "./components/SubmissionDialog";
 import SubmissionCard from "./components/SubmissionCard";
 import UploadIcon from "@mui/icons-material/Upload";
-import { Author, State } from "../../types/types";
+import { State } from "../../types/types";
 
 import {
   createSubmission,
   fetchSubmissionsByAuthor,
   Submission,
   deleteSubmission,
-  updateSubmission,
+  editSubmission,
+  reSubmission,
 } from "../../store/slices/submissionSlice";
 import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
-import { c } from "vite/dist/node/types.d-aGj9QkWt";
 import { LoadingButton } from "@mui/lab";
+import ResubmitDialog from "./components/ResubmitDialog";
 
 const Dashboard = () => {
   const user = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
+  const { deadlines } = useAppSelector((state) => state.settings);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [resubmitDialogOpen, setResubmitDialogOpen] = useState(false);
   const [mode, setMode] = useState<"create" | "edit">("create");
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
@@ -44,18 +47,11 @@ const Dashboard = () => {
   }, []);
 
   // Handle form submission (create or edit)
-  const handleSubmit = async (data: {
-    type: string;
-    title: string;
-    file?: File;
-    authors: Author[];
-  }) => {
+  const handleSubmit = async (data: Partial<Submission>, file?: File) => {
     const formData = new FormData();
-    formData.append("type", data.type);
-    formData.append("title", data.title);
-    formData.append("authors", JSON.stringify(data.authors));
-    if (data.file) {
-      formData.append("file", data.file);
+    formData.append("submission", JSON.stringify(data));
+    if (file) {
+      formData.append("file", file);
     }
 
     try {
@@ -63,8 +59,13 @@ const Dashboard = () => {
         dispatch(createSubmission(formData)).then(() => {
           dispatch(fetchSubmissionsByAuthor());
         });
-      } else if (mode === "edit" && selectedSubmission) {
-        dispatch(updateSubmission({ id: selectedSubmission.id, formData }));
+      } else if (
+        mode === "edit" &&
+        selectedSubmission &&
+        selectedSubmission.id
+      ) {
+        console.log("Edit submission: ", selectedSubmission.id);
+        dispatch(editSubmission({ id: selectedSubmission.id, formData }));
       }
     } catch (error) {
       dispatch(
@@ -75,6 +76,15 @@ const Dashboard = () => {
     }
   };
 
+  const onResubmit = async (data: Partial<Submission>, file?: File) => {
+    const formData = new FormData();
+
+    if (selectedSubmission && selectedSubmission.id && file) {
+      formData.append("file", file);
+      dispatch(reSubmission({ id: selectedSubmission?.id || "", formData }));
+    }
+  };
+
   // Handle edit submission
   const handleEdit = (submission: Submission) => {
     setSelectedSubmission(submission);
@@ -82,15 +92,16 @@ const Dashboard = () => {
     setDialogOpen(true);
   };
 
+  const handleResubmit = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setResubmitDialogOpen(true);
+  };
+
   // Handle delete submission
   const handleDelete = async (id: string) => {
-    try {
-      dispatch(deleteSubmission(id));
-    } catch (error) {
-      dispatch(
-        enqueueSnackbarMessage({ message: "Failed to delete", type: "error" })
-      );
-    }
+    dispatch(deleteSubmission(id)).then(() => {
+      dispatch(fetchSubmissionsByAuthor());
+    });
   };
 
   return (
@@ -103,7 +114,10 @@ const Dashboard = () => {
         <LoadingButton
           variant="contained"
           color="primary"
-          disabled={submissions.length === 2}
+          disabled={
+            submissions.length === 2 ||
+            new Date(deadlines.submission) < new Date()
+          }
           startIcon={<UploadIcon />}
           loading={uploadState === State.loading}
           onClick={() => {
@@ -149,6 +163,7 @@ const Dashboard = () => {
                     submission={submission}
                     onEdit={() => handleEdit(submission)}
                     onDelete={() => handleDelete(submission.id)}
+                    onResubmit={() => handleResubmit(submission)}
                   />
                 ))}
               </Stack>
@@ -161,13 +176,20 @@ const Dashboard = () => {
           Failed to fetch submissions.
         </Typography>
       )}
-
+      {selectedSubmission && (
+        <ResubmitDialog
+          open={resubmitDialogOpen}
+          onClose={() => setResubmitDialogOpen(false)}
+          onSubmit={onResubmit}
+          submission={selectedSubmission}
+        />
+      )}
       {/* Submission Dialog */}
       <SubmissionDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         mode={mode}
-        initialData={selectedSubmission}
+        submission={selectedSubmission}
         onSubmit={handleSubmit}
       />
     </Box>
