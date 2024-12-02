@@ -1,0 +1,14 @@
+name: backend-service # Replace with your backend service name
+type: backend-app # Specify the type of component
+build:
+  context: ./ # The build context (usually the root of the project)
+  builder: choreo-docker # Specify the builder
+  command: npm run build # Build command for your backend
+runtime:
+  type: nodejs-app # Specify runtime type (e.g., nodejs-app, python-app, etc.)
+  port: 3000 # Port where the backend application runs
+ingress:
+  enabled: false # Backend typically doesn't expose a direct ingress unless necessary
+  rules:
+    - host: api.example.com # Replace with your backend domain (if ingress is needed)
+      path: /api
