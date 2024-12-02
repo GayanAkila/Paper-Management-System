@@ -1,5 +1,6 @@
 const { auth, db } = require("../firebase/firebaseConfig");
 const { validationResult } = require("express-validator");
+const sendEmail = require('../utils/emailService');
 const axios = require("axios");
 
 // @route   POST /api/v1/auth/register
@@ -33,6 +34,15 @@ exports.register = async (req, res) => {
         role: role || "student",
         isActive: true,
       });
+
+      const message = `Welcome to BISSS 2024, ${name}! You have successfully registered as a ${role || "student"}.
+      your email is ${email}. password is ${password}.`;
+      
+        await sendEmail({
+          email,
+          subject: 'Welcome to BISSS 2024',
+          message,
+        });
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
