@@ -34,7 +34,6 @@ import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
 import UserEditDialog from "./components/UserEditDialog";
 import { LoadingButton } from "@mui/lab";
 import { appConfig, firebaseConfig } from "../../config/config";
-import { c } from "vite/dist/node/types.d-aGj9QkWt";
 
 const Users = () => {
   const dispatch = useAppDispatch();
