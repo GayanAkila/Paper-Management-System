@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const { google } = require("googleapis");
 const path = require("path");
 const fs = require("fs");
+const sendEmail = require('../utils/emailService');
 
 const KEYFILEPATH = path.join(__dirname, "../config/service-account-key.json");
 const SCOPES = ["https://www.googleapis.com/auth/drive"];
@@ -406,6 +407,16 @@ exports.assignReviewers = async (req, res) => {
       updatedAt: new Date().toISOString(),
     });
 
+    const message = `You have been assigned to review a submission. Please log in to your account to view the submission and submit your review.`;
+  
+      for (const reviewer of reviewers) {
+        await sendEmail({
+          email: reviewer,
+          subject: 'Assign a Paper to Review',
+          message,
+        });
+      }
+    
     res.status(200).json({ message: "Reviewers assigned successfully." });
   } catch (error) {
     console.error("Error assigning reviewers:", error);
@@ -421,6 +432,8 @@ exports.submitReview = async (req, res) => {
 
   const allowedDecisions = ["approve", "needs revision", "reject"];
   console.log("req.body: ", req.body);
+
+  
 
   if (!comments || !decision || !allowedDecisions.includes(decision)) {
     return res.status(400).json({
