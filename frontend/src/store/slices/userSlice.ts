@@ -11,6 +11,8 @@ export interface User {
   email: string;
   isActive: boolean;
   role: string;
+  appreciationLetterUrl?: string;
+  letterEmailed?: boolean;
 }
 
 interface UserState {

@@ -17,6 +17,12 @@ export interface Comment {
   fileUrl: string;
 }
 
+export interface certificate {
+  certificateUrl: string;
+  email: string;
+  name: string;
+}
+
 export interface Submission {
   id: string;
   title: string;
@@ -28,7 +34,8 @@ export interface Submission {
   createdAt?: string;
   updatedAt?: string;
   reviewers: string[];
-  reviews: { comments: Comment[]; finalDecision: string | null };
+  reviews?: { comments: Comment[]; finalDecision: string | null };
+  certificateUrls?: certificate[];
 }
 
 interface SubmissionsState {
@@ -63,7 +70,6 @@ export const fetchSubmissionsByAuthor = createAsyncThunk(
       axiosInstance
         .get("/submissions/by-author")
         .then((response) => {
-          console.log("Response: ", response.data);
           resolve(response.data);
         })
         .catch((error) => {

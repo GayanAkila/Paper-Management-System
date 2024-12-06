@@ -1,9 +1,9 @@
-export enum Status {
-  pending = "pending",
+export enum SubmissionStatus {
+  inReview = "in review",
+  submitted = "submitted",
   approved = "approved",
-  rejected = "rejected",
-  approvedWithChanges = "approved with changes",
-  underReview = "under review",
+  needsRevision = "needs revision",
+  Rejected = "rejected",
 }
 
 export enum SubmissionType {

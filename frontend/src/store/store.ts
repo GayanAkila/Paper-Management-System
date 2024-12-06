@@ -4,6 +4,8 @@ import submissionsReducer from "./slices/submissionSlice";
 import commonReducer from "./slices/commonSlice";
 import userReducer from "./slices/userSlice";
 import settingsReducer from "./slices/settingsSlice";
+import certificateReducer from "./slices/certificateSlice";
+import lettersReducer from "./slices/letterSlice";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 export const store = configureStore({
@@ -13,6 +15,8 @@ export const store = configureStore({
     common: commonReducer,
     user: userReducer,
     settings: settingsReducer,
+    certificate: certificateReducer,
+    letters: lettersReducer,
   },
 });
 

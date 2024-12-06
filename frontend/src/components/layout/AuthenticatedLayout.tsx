@@ -28,7 +28,7 @@ import LoadingScreen from "../LoadingScreen";
 import { UserRole } from "../../types/types";
 import { useSnackbar } from "notistack";
 import { fetchDeadlines } from "../../store/slices/settingsSlice";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 const AuthenticatedLayout = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -38,6 +38,7 @@ const AuthenticatedLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
     if (common.timestamp != null) {
@@ -52,6 +53,20 @@ const AuthenticatedLayout = () => {
   useEffect(() => {
     dispatch(fetchDeadlines());
   }, []);
+
+  useEffect(() => {
+    if (deadlines.submission) {
+      const interval = setInterval(() => {
+        const formattedCountdown = formatDistanceToNow(
+          new Date(deadlines.submission),
+          { addSuffix: true }
+        );
+        setCountdown(formattedCountdown);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [deadlines.submission]);
 
   const filteredNavItems = navItems.filter((item) => {
     if (!user?.role) return false;
@@ -135,15 +150,14 @@ const AuthenticatedLayout = () => {
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Chip
-              label={`submission : ${formattedSubmissionTime}`}
+              label={`submission : ${countdown}` || "No deadline set"}
               sx={{
-                height: 40,
+                height: 30,
+                fontWeight: 600,
                 width: "auto",
-                backgroundColor: "#EFF0F3",
-                "&:hover": {
-                  backgroundColor: "#EFF0F3",
-                },
-                borderRadius: "24px",
+                backgroundColor: "#CDE2FC",
+
+                borderRadius: 1,
               }}
             />
             <Chip

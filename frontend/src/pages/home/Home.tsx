@@ -70,6 +70,7 @@ const Home = () => {
               color="primary"
               size="large"
               endIcon={<ArrowForwardIcon />}
+              sx={{borderRadius: 24}}
             >
               Register Now
             </Button>
@@ -231,7 +232,7 @@ const Home = () => {
                 color="primary"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
-                sx={{ mt: 3 }}
+                sx={{ mt: 3, borderRadius: 24 }}
               >
                 Read More
               </Button>
