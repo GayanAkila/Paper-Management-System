@@ -123,6 +123,7 @@ const HomeHeader = () => {
               sx={{
                 transition: "all 0.3s ease-in-out",
                 transform: visible ? "scale(1)" : "scale(0.95)",
+                borderRadius: 24,
               }}
             >
               Register Now

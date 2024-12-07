@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../../store/store";
 import { logout } from "../../store/slices/authSlice";
@@ -8,7 +8,6 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  IconButton,
   List,
   ListItem,
   ListItemIcon,
@@ -18,32 +17,65 @@ import {
   MenuItem,
   Divider,
   Stack,
-  Badge,
-  Button,
   Chip,
 } from "@mui/material";
-import {
-  Menu as MenuIcon,
-  Dashboard,
-  Person,
-  Settings,
-  EventNote,
-  Group,
-  AdminPanelSettings,
-  Logout,
-  Article,
-  Notifications,
-} from "@mui/icons-material";
+import { Person, Logout } from "@mui/icons-material";
 import { useState } from "react";
-import { auth } from "../../firebase";
+import { auth } from "../../config/firebase";
 import { signOut } from "firebase/auth";
 import { navItems } from "../NavItems";
+import LoadingScreen from "../LoadingScreen";
+import { UserRole } from "../../types/types";
+import { useSnackbar } from "notistack";
+import { fetchDeadlines } from "../../store/slices/settingsSlice";
+import { format, formatDistanceToNow } from "date-fns";
 
 const AuthenticatedLayout = () => {
-  const { user } = useAppSelector((state) => state.auth);
+  const { enqueueSnackbar } = useSnackbar();
+  const { deadlines } = useAppSelector((state) => state.settings);
+  const common = useAppSelector((state) => state.common);
+  const { user, loading } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [countdown, setCountdown] = useState("");
+
+  useEffect(() => {
+    if (common.timestamp != null) {
+      enqueueSnackbar(common.message, {
+        variant: common.type,
+        preventDuplicate: true,
+        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+      });
+    }
+  }, [common.timestamp]);
+
+  useEffect(() => {
+    dispatch(fetchDeadlines());
+  }, []);
+
+  useEffect(() => {
+    if (deadlines.submission) {
+      const interval = setInterval(() => {
+        const formattedCountdown = formatDistanceToNow(
+          new Date(deadlines.submission),
+          { addSuffix: true }
+        );
+        setCountdown(formattedCountdown);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [deadlines.submission]);
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (!user?.role) return false;
+    return item.roles.includes(user.role as UserRole);
+  });
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -73,11 +105,9 @@ const AuthenticatedLayout = () => {
     handleClose();
   };
 
-  const userRole = user.role || "user";
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(userRole)
-  );
-  const drawerWidth = 250;
+  const formattedSubmissionTime = deadlines.submission
+    ? format(new Date(deadlines.submission), "Y-MMMM-d") // 'p' is the format string for time
+    : "No deadline set";
 
   return (
     <Box
@@ -119,25 +149,27 @@ const AuthenticatedLayout = () => {
           />
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <IconButton color="primary">
-              <Badge badgeContent={4} color="error">
-                <Notifications />
-              </Badge>
-            </IconButton>
+            <Chip
+              label={`submission : ${countdown}` || "No deadline set"}
+              sx={{
+                height: 30,
+                fontWeight: 600,
+                width: "auto",
+                backgroundColor: "#CDE2FC",
 
+                borderRadius: 1,
+              }}
+            />
             <Chip
               onClick={handleMenu}
               sx={{
-                height: "auto",
-                padding: "8px",
+                height: 40,
+                width: "auto",
                 backgroundColor: "#EFF0F3",
                 "&:hover": {
                   backgroundColor: "#EFF0F3",
                 },
                 borderRadius: "24px",
-                "& .MuiChip-label": {
-                  padding: 0,
-                },
               }}
               label={
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -150,7 +182,7 @@ const AuthenticatedLayout = () => {
                     </Typography>
                   </Stack>
                   <Avatar
-                    src={user.photoUrl || undefined}
+                    src={user.photoURL || undefined}
                     alt={
                       user.displayName || user.email?.charAt(0).toUpperCase()
                     }
@@ -218,6 +250,7 @@ const AuthenticatedLayout = () => {
           variant="permanent"
           sx={{
             width: 250,
+            height: `auto`, // Full height minus AppBar
             flexShrink: 0,
             "& .MuiDrawer-paper": {
               width: 250,
@@ -248,17 +281,20 @@ const AuthenticatedLayout = () => {
                   sx={{
                     borderRadius: 1,
                     mb: 1,
-                    color: "#64748B",
+                    color: "#fff",
                     textDecoration: "none",
                     "&.active": {
-                      bgcolor: "#EFF6FF",
-                      color: "#2563EB",
+                      bgcolor: (theme) => theme.palette.background.navBar,
+                      color: (theme) => theme.palette.common.white,
                       "& .MuiListItemIcon-root": {
-                        color: "#2563EB",
+                        color: "#fff",
+                      },
+                      "& .MuiTypography-body1": {
+                        color: "#fff",
                       },
                     },
                     "&:hover": {
-                      bgcolor: "#F8FAFC",
+                      bgcolor: "#DDECFE",
                     },
                   }}
                 >
@@ -275,6 +311,7 @@ const AuthenticatedLayout = () => {
                     primaryTypographyProps={{
                       fontSize: "0.95rem",
                       fontWeight: 500,
+                      // color: "#fff",
                     }}
                   />
                 </ListItem>
@@ -286,12 +323,11 @@ const AuthenticatedLayout = () => {
         {/* Main Content */}
         <Box
           sx={{
-            flex: 1,
-            px: 4,
-            py: 3,
-            height: `calc(100vh - 64px)`, // Full height minus AppBar
-            overflow: "hidden",
-            display: "flex",
+            flexGrow: 1,
+            height: "100%",
+            width: "100vw",
+            p: 3,
+            overflow: "auto",
           }}
         >
           <Box
@@ -300,7 +336,10 @@ const AuthenticatedLayout = () => {
               bgcolor: "white",
               borderRadius: 2,
               p: 3,
-              // overflow: "auto", // This enables scrolling for content
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             <Outlet />

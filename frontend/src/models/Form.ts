@@ -1,6 +1,9 @@
 import * as yup from "yup";
 
 export const authFormSchema = yup.object().shape({
+  name: yup
+  .string()
+  .required("user name is required"),
   email: yup
     .string()
     .email("Please provide a valid email address")
@@ -17,6 +20,7 @@ export const authFormSchema = yup.object().shape({
 });
 
 export interface AuthForm {
+  name:string;
   email: string;
   password: string;
   confirmPassword: string;

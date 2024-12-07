@@ -1,4 +1,14 @@
 import { Dispatch, FC, SetStateAction } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Alert,
+  Box,
+} from "@mui/material";
 
 interface ResetPasswordProps {
   isOpen: boolean;
@@ -22,39 +32,40 @@ const ResetPassword: FC<ResetPasswordProps> = (props) => {
   } = props;
 
   return (
-    <div
-      className={`fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-center items-center bg-black bg-opacity-50`}
-      style={{ transform: `translateY(${isOpen ? "0%" : "-100%"})` }}
-    >
-      <div className="bg-white rounded-lg p-8 w-96">
-        <h1 className="text-2xl font-bold mb-4">Password Reset</h1>
-        <input
-          type="email"
-          value={resetPasswordEmail}
-          onChange={(e) => setResetPasswordEmail(e.target.value)}
-          placeholder="Email"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
-        />
-        <button
-          onClick={handlePasswordReset}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg"
-        >
+    <Dialog open={isOpen} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Password Reset</DialogTitle>
+      <DialogContent>
+        <Box sx={{ mt: 2 }}>
+          {resetPasswordSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {resetPasswordSuccess}
+            </Alert>
+          )}
+          {resetPasswordError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {resetPasswordError}
+            </Alert>
+          )}
+          <TextField
+            type="email"
+            value={resetPasswordEmail}
+            onChange={(e) => setResetPasswordEmail(e.target.value)}
+            label="Email"
+            fullWidth
+            autoFocus
+            margin="dense"
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 2, pt: 0 }}>
+        <Button onClick={onClose} color="inherit">
+          Cancel
+        </Button>
+        <Button onClick={handlePasswordReset} variant="contained">
           Reset Password
-        </button>
-        {resetPasswordSuccess && (
-          <p className="text-green-500 mt-2">{resetPasswordSuccess}</p>
-        )}
-        {resetPasswordError && (
-          <p className="text-red-500 mt-2">{resetPasswordError}</p>
-        )}
-        <button
-          onClick={onClose}
-          className="text-gray-500 mt-4 text-sm underline hover:text-gray-700"
-        >
-          Close
-        </button>
-      </div>
-    </div>
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

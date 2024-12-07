@@ -39,6 +39,8 @@ declare module "@mui/material/styles" {
   interface TypeBackground {
     lightBackground?: string;
     icon?: string;
+    mainText?: string;
+    navBar?: string;
   }
 
   interface PaletteOptions {
@@ -60,6 +62,8 @@ const theme = createTheme({
       paper: colors.primary[1000],
       lightBackground: colors.primary[1000],
       icon: colors.primary[100],
+      mainText: colors.primary[100],
+      navBar: colors.primary[200],
     },
     text: {
       primary: colors.primary[100], // Primary text color
@@ -102,7 +106,7 @@ const theme = createTheme({
         root: {
           boxShadow: "none",
           textTransform: "none", // Removes uppercase transformation
-          borderRadius: 24, // Adds border-radius to button
+          borderRadius: 4, // Adds border-radius to button
           "&:hover": {
             boxShadow: "none", // Disables box-shadow on hover
           },

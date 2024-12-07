@@ -1,17 +1,17 @@
 import { Dispatch, FC, SetStateAction } from "react";
-import { User } from "../../store/slices/authSlice";
-
+import User from "../../store/slices/authSlice";
+import { UserProfile } from "../../types/types";
 
 interface ProfileCardProps {
   handleLogout: () => Promise<void>;
-  user: User;
+  user: UserProfile;
   setResetPassword: () => void;
 }
 
 const ProfileCard: FC<ProfileCardProps> = (props) => {
   const {
     handleLogout,
-    user: { photoUrl, email },
+    user: { photoURL, email },
     setResetPassword,
   } = props;
 
@@ -19,10 +19,10 @@ const ProfileCard: FC<ProfileCardProps> = (props) => {
     <div className="w-screen h-[80vh] flex items-center justify-center">
       <div className="w-full p-4 max-w-sm bg-white border border-gray-200 rounded-lg shadow">
         <div className="flex flex-col items-center pb-10">
-          {photoUrl ? (
+          {photoURL ? (
             <img
               className="w-24 h-24 mb-3 object-cover rounded-full shadow-lg"
-              src={photoUrl}
+              src={photoURL}
               alt="Avatar"
             />
           ) : (

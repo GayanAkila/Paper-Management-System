@@ -1,76 +1,48 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type UserRole = 'admin' | 'reviewer' | 'user';
-
-export interface User {
-  email: string;
-  id: string;
-  photoUrl: string | null;
-  role: UserRole;
-  displayName?: string;
-}
-
-interface AuthState {
-  user: User | null;
-  isLoading: boolean;
-  error: string | null;
-}
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { AuthState, UserProfile } from "../../types/types";
+import { logoutUser } from "../../services/authService";
 
 const initialState: AuthState = {
   user: null,
-  isLoading: false,
-  error: null
+  loading: true,
+  error: null,
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
-    loginStart: (state) => {
-      state.isLoading = true;
-      state.error = null;
-    },
-    login: (state, action: PayloadAction<User>) => {
-      state.isLoading = false;
+    login: (state, action: PayloadAction<UserProfile>) => {
       state.user = action.payload;
+      state.loading = false;
       state.error = null;
-    },
-    loginError: (state, action: PayloadAction<string>) => {
-      state.isLoading = false;
-      state.error = action.payload;
+      // localStorage.setItem("idToken", action.payload.idToken);
+      // localStorage.setItem("refreshToken", action.payload.refreshToken);
     },
     logout: (state) => {
       state.user = null;
+      state.loading = false;
       state.error = null;
-      state.isLoading = false;
+      console.log("logout");
+      // Clear tokens from localStorage
+      logoutUser();
     },
-    updateUserRole: (state, action: PayloadAction<UserRole>) => {
-      if (state.user) {
-        state.user.role = action.payload;
-      }
+    
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
     },
-    updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    updateUser: (state, action: PayloadAction<Partial<UserProfile>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
       }
-    }
-  }
+    },
+  },
 });
 
-// Selectors
-export const selectUser = (state: { auth: AuthState }) => state.auth.user;
-export const selectIsAuthenticated = (state: { auth: AuthState }) => !!state.auth.user;
-export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.role;
-export const selectIsAdmin = (state: { auth: AuthState }) => state.auth.user?.role === 'admin';
-export const selectIsReviewer = (state: { auth: AuthState }) => state.auth.user?.role === 'reviewer';
-
-export const { 
-  login, 
-  logout, 
-  loginStart, 
-  loginError, 
-  updateUserRole, 
-  updateUserProfile 
-} = authSlice.actions;
-
+export const { login, logout, setLoading, setError, updateUser } =
+  authSlice.actions;
 export default authSlice.reducer;
