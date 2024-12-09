@@ -9,6 +9,7 @@ import {
   Alert,
   Stack,
   Box,
+  Divider,
 } from "@mui/material";
 import { Upload } from "@mui/icons-material";
 import { Submission } from "../../../store/slices/submissionSlice";
@@ -87,7 +88,7 @@ const ResubmitDialog: React.FC<ResubmitDialogProps> = ({
           Resubmit Paper
         </Typography>
       </DialogTitle>
-
+      <Divider />
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 2 }}>
           <Box>

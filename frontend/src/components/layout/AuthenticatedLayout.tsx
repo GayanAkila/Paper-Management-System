@@ -23,12 +23,12 @@ import { Person, Logout } from "@mui/icons-material";
 import { useState } from "react";
 import { auth } from "../../config/firebase";
 import { signOut } from "firebase/auth";
-import { navItems } from "../NavItems";
+import { navItems } from "./NavItems";
 import LoadingScreen from "../LoadingScreen";
 import { UserRole } from "../../types/types";
 import { useSnackbar } from "notistack";
 import { fetchDeadlines } from "../../store/slices/settingsSlice";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 const AuthenticatedLayout = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -40,6 +40,7 @@ const AuthenticatedLayout = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [countdown, setCountdown] = useState("");
 
+  // Show snackbar on common message change
   useEffect(() => {
     if (common.timestamp != null) {
       enqueueSnackbar(common.message, {
@@ -50,10 +51,12 @@ const AuthenticatedLayout = () => {
     }
   }, [common.timestamp]);
 
+  // Fetch deadlines on component mount
   useEffect(() => {
     dispatch(fetchDeadlines());
   }, []);
 
+  // Update countdown every second
   useEffect(() => {
     if (deadlines.submission) {
       const interval = setInterval(() => {
@@ -68,27 +71,18 @@ const AuthenticatedLayout = () => {
     }
   }, [deadlines.submission]);
 
+  // Filter nav items based on user role
   const filteredNavItems = navItems.filter((item) => {
     if (!user?.role) return false;
     return item.roles.includes(user.role as UserRole);
   });
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
+  // Handle menu open and close
   const handleClose = () => {
     setAnchorEl(null);
   };
 
+  // Handle logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -100,14 +94,15 @@ const AuthenticatedLayout = () => {
     handleClose();
   };
 
-  const handleProfile = () => {
-    navigate("/profile");
-    handleClose();
-  };
+  // Redirect to auth page if user is not logged in
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
-  const formattedSubmissionTime = deadlines.submission
-    ? format(new Date(deadlines.submission), "Y-MMMM-d") // 'p' is the format string for time
-    : "No deadline set";
+  // Redirect to auth page if user is not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <Box
@@ -121,6 +116,7 @@ const AuthenticatedLayout = () => {
     >
       {/* AppBar */}
       <AppBar
+        elevation={0}
         position="fixed"
         sx={{
           boxShadow: "none",
@@ -161,7 +157,9 @@ const AuthenticatedLayout = () => {
               }}
             />
             <Chip
-              onClick={handleMenu}
+              onClick={(event: React.MouseEvent<HTMLElement>) => {
+                setAnchorEl(event.currentTarget);
+              }}
               sx={{
                 height: 40,
                 width: "auto",
@@ -220,7 +218,12 @@ const AuthenticatedLayout = () => {
               },
             }}
           >
-            <MenuItem onClick={handleProfile}>
+            <MenuItem
+              onClick={() => {
+                navigate("/profile");
+                handleClose();
+              }}
+            >
               <ListItemIcon>
                 <Person fontSize="small" />
               </ListItemIcon>
@@ -249,11 +252,11 @@ const AuthenticatedLayout = () => {
         <Drawer
           variant="permanent"
           sx={{
-            width: 250,
+            width: 280,
             height: `auto`, // Full height minus AppBar
             flexShrink: 0,
             "& .MuiDrawer-paper": {
-              width: 250,
+              width: 280,
               boxSizing: "border-box",
               border: "none",
               bgcolor: "transparent",

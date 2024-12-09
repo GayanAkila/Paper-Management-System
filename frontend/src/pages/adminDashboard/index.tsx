@@ -70,7 +70,9 @@ const AdminDashboard = () => {
           pt: 1,
         }}
       >
-        <Typography variant="h4">Dashboard</Typography>
+        <Typography variant="h4" fontWeight={500}>
+          Dashboard
+        </Typography>
       </Box>
       {/* Stats Grid */}
       <Box

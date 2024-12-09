@@ -200,7 +200,10 @@ const Auth = () => {
       justifyContent="center"
       height="100vh"
       width="100vw"
-      sx={{ background: (theme) => theme.palette.background.default }}
+      sx={{
+        background:
+          "radial-gradient(circle at 50% 50%,rgba(33,115,243,.21836485) 0,rgba(245,246,246,.38559174) 35%,#f5f6f6 100%),radial-gradient(circle at 50% 50%,rgba(37,142,144,.12343312) 0,rgba(245,246,246,.38559174) 47%,#f5f6f6 100%)",
+      }}
     >
       <Stack
         width={500}
@@ -212,7 +215,7 @@ const Auth = () => {
           boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
         }}
       >
-        <Typography variant="h4" align="center">
+        <Typography variant="h4" align="center" fontWeight={500}>
           {authType === "login" ? "Sign In" : "Create Account"}
         </Typography>
 
@@ -283,6 +286,7 @@ const Auth = () => {
                 loading ? <CircularProgress size={20} /> : <EmailIcon />
               }
               fullWidth
+              sx={{ height: 40 }}
             >
               {authType === "login" ? "Sign In" : "Sign Up"} with Email
             </Button>
@@ -293,6 +297,7 @@ const Auth = () => {
               disabled={loading}
               startIcon={<GoogleIcon />}
               fullWidth
+              sx={{ height: 40 }}
             >
               Continue with Google
             </Button>

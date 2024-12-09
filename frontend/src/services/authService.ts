@@ -68,13 +68,18 @@ export const registerUser = async (data: {
 
 export const loginUser = async (data: { email: string; password: string }) => {
   const response = await axiosInstance.post(`/auth/login`, data);
-  console.log("Login response tokens:", {
-    hasIdToken: !!response.data.idToken,
-    tokenLength: response.data.idToken?.length,
-  });
+  // console.log("Login response tokens:", {
+  //   hasIdToken: !!response.data.idToken,
+  //   tokenLength: response.data.idToken?.length,
+  // });
   saveAuthTokens(response.data);
   return response.data;
 };
+
+export const updateProfile = async (data: { name: string; email: string }) => {
+  const response = await axiosInstance.put(`/auth/profile`, data);
+  return response.data;
+}
 
 export const logoutUser = () => {
   localStorage.removeItem("idToken");

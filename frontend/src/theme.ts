@@ -86,7 +86,7 @@ const theme = createTheme({
   typography: {
     fontFamily: "Poppins, sans-serif", // Set default font family
     h4: {
-      fontWeight: 700,
+      fontWeight: 500,
       color: "#143559",
     },
     body1: {
@@ -109,6 +109,23 @@ const theme = createTheme({
           borderRadius: 4, // Adds border-radius to button
           "&:hover": {
             boxShadow: "none", // Disables box-shadow on hover
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        root: {
+          backdropFilter: "blur(5px)",
+        },
+        paper: {
+          width: "90vw",
+          backgroundImage: "none",
+          borderRadius: 8,
+          backgroundColor: "white",
+          maxHeight: "90vh",
+          "& .MuiDialogTitle-root": {
+            fontWeight: "bold",
           },
         },
       },

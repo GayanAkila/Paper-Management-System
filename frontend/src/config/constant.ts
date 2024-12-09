@@ -10,6 +10,7 @@ export const SnackMessage = {
     updateDeadline: "Deadline updated successfully.",
     addReviews: "Reviews added successfully.",
     reSubmission: "Submission resubmitted successfully.",
+    updateProfile: "Profile updated successfully.",
   },
   error: {
     fetchSubmissions: "Failed to fetch submissions.",
@@ -25,6 +26,7 @@ export const SnackMessage = {
     addReviews: "Failed to add reviews.",
     getReviews: "Failed to get reviews.",
     reSubmission: "Failed to resubmit submission.",
+    updateProfile: "Failed to update profile.",
   },
   warning: {},
 };

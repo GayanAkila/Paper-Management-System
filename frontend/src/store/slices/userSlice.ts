@@ -1,20 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { State } from "../../types/types";
+import { State, User } from "../../types/types";
 import axiosInstance from "../../services/axiosInstance";
 import axios, { HttpStatusCode } from "axios";
 import { enqueueSnackbarMessage } from "./commonSlice";
 import { SnackMessage } from "../../config/constant";
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-  role: string;
-  appreciationLetterUrl?: string;
-  letterEmailed?: boolean;
-}
-
+//
 interface UserState {
   users: User[];
   loading: boolean;
@@ -25,6 +16,7 @@ interface UserState {
   stateMessage: string;
 }
 
+// initial state
 const initialState: UserState = {
   users: [],
   loading: false,
@@ -35,6 +27,7 @@ const initialState: UserState = {
   stateMessage: "",
 };
 
+// fetch all users
 export const fetchAllUsers = createAsyncThunk(
   "user/fetchAllUsers",
   async (_, { dispatch, rejectWithValue }) => {
@@ -63,6 +56,7 @@ export const fetchAllUsers = createAsyncThunk(
   }
 );
 
+// add user
 export const addUser = createAsyncThunk(
   "user/addUser",
   async (user: User, { dispatch, rejectWithValue }) => {
@@ -97,6 +91,7 @@ export const addUser = createAsyncThunk(
   }
 );
 
+// update user
 export const updateUser = createAsyncThunk(
   "user/updateUser",
   async (user: Partial<User>, { dispatch, rejectWithValue }) => {
@@ -131,6 +126,7 @@ export const updateUser = createAsyncThunk(
   }
 );
 
+// delete user
 export const deleteUser = createAsyncThunk(
   "user/deleteUser",
   async (id: string, { dispatch, rejectWithValue }) => {
@@ -175,6 +171,7 @@ export const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+    // fetch all users
       .addCase(fetchAllUsers.pending, (state) => {
         state.loading = true;
         state.fetchState = State.loading;
@@ -189,6 +186,7 @@ export const userSlice = createSlice({
         state.fetchState = State.failed;
         state.stateMessage = action.error.message as string;
       })
+      // add user
       .addCase(addUser.pending, (state) => {
         state.loading = true;
         state.addState = State.loading;
@@ -202,6 +200,7 @@ export const userSlice = createSlice({
         state.addState = State.failed;
         state.stateMessage = action.error.message as string;
       })
+      // update user
       .addCase(updateUser.pending, (state) => {
         state.loading = true;
         state.updateState = State.loading;
@@ -215,6 +214,7 @@ export const userSlice = createSlice({
         state.updateState = State.failed;
         state.stateMessage = action.error.message as string;
       })
+      // delete user
       .addCase(deleteUser.pending, (state) => {
         state.loading = true;
         state.deleteState = State.loading;

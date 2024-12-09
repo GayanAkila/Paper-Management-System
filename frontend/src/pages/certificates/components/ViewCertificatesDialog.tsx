@@ -1,10 +1,12 @@
-import { Description } from "@mui/icons-material";
+import { Close, Description } from "@mui/icons-material";
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  IconButton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -24,13 +26,17 @@ const ViewCertificatesDialog: React.FC<ViewCertificatesDialogProps> = ({
   certificates,
 }) => (
   <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-    <DialogTitle>
-      <Typography variant="h6" fontWeight={600}>
+    <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
+      <Typography variant="h6" fontWeight={500}>
         View Certificates
       </Typography>
+      <IconButton onClick={onClose} size="small">
+        <Close />
+      </IconButton>
     </DialogTitle>
+    <Divider />
     <DialogContent>
-      <Stack spacing={2} sx={{ mt: 2 }}>
+      <Stack spacing={2} sx={{ my: 2 }}>
         {certificates.map((cert, index) => (
           <Button
             key={index}
@@ -44,11 +50,6 @@ const ViewCertificatesDialog: React.FC<ViewCertificatesDialogProps> = ({
         ))}
       </Stack>
     </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} sx={{ textTransform: "none" }}>
-        Close
-      </Button>
-    </DialogActions>
   </Dialog>
 );
 

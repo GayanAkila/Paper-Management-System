@@ -224,7 +224,7 @@ const FeedbackPanel = () => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Typography variant="h4" sx={{ mb: 1 }}>
+      <Typography variant="h4" fontWeight={500} sx={{ mb: 1 }}>
         Feedback Panel
       </Typography>
 

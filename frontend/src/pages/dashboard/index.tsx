@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Skeleton, Stack, Tooltip, Typography } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import SubmissionDialog from "./components/SubmissionDialog";
 import SubmissionCard from "./components/SubmissionCard";
 import UploadIcon from "@mui/icons-material/Upload";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import { State } from "../../types/types";
 
 import {
@@ -38,6 +32,7 @@ const Dashboard = () => {
     userSubmissions: submissions,
     updateState,
     fetchState,
+    reUploadState,
     uploadState,
   } = useAppSelector((state) => state.submissions);
 
@@ -110,47 +105,81 @@ const Dashboard = () => {
       <Box
         sx={{ display: "flex", justifyContent: "space-between", mb: 3, pt: 1 }}
       >
-        <Typography variant="h4">Dashboard</Typography>
-        <LoadingButton
-          variant="contained"
-          color="primary"
-          disabled={
-            submissions.length === 2 ||
-            new Date(deadlines.submission) < new Date()
+        <Typography variant="h4" fontWeight={500}>
+          Dashboard
+        </Typography>
+        <Tooltip
+          title={
+            submissions.length === 2
+              ? "You have reached the maximum number of submissions"
+              : new Date(deadlines.submission) < new Date()
+              ? "The submission deadline has passed"
+              : ""
           }
-          startIcon={<UploadIcon />}
-          loading={uploadState === State.loading}
-          onClick={() => {
-            setMode("create");
-            setSelectedSubmission(null);
-            setDialogOpen(true);
-          }}
-          sx={{ borderRadius: 1 }}
         >
-          Upload the file
-        </LoadingButton>
+          <LoadingButton
+            variant="contained"
+            color="primary"
+            disabled={
+              submissions.length === 2 ||
+              new Date(deadlines.submission) < new Date()
+            }
+            startIcon={<UploadIcon />}
+            loading={
+              uploadState === State.loading || updateState === State.loading
+            }
+            onClick={() => {
+              setMode("create");
+              setSelectedSubmission(null);
+              setDialogOpen(true);
+            }}
+            sx={{ borderRadius: 1 }}
+          >
+            Upload the file
+          </LoadingButton>
+        </Tooltip>
       </Box>
 
       {/* Submission List */}
 
-      {fetchState === State.loading && (
-        <Stack height={"100%"}>
-          <Box overflow={"hidden"} sx={{ borderRadius: 4, flexGrow: 1 }}>
-            <Skeleton
-              variant="rounded"
-              animation="wave"
-              height={"100%"}
-              sx={{ borderRadius: 4 }}
-            />
-          </Box>
-        </Stack>
-      )}
+      {fetchState === State.loading ||
+        (reUploadState === State.loading && (
+          <Stack height={"100%"}>
+            <Box overflow={"hidden"} sx={{ borderRadius: 4, flexGrow: 1 }}>
+              <Skeleton
+                variant="rounded"
+                animation="wave"
+                height={"100%"}
+                sx={{ borderRadius: 4 }}
+              />
+            </Box>
+          </Stack>
+        ))}
       {fetchState === State.success && (
         <>
           {submissions.length === 0 && (
-            <Typography variant="body1" sx={{ textAlign: "center" }}>
-              No submissions found.
-            </Typography>
+            <Box
+              height={"100%"}
+              gap={2}
+              display={"flex"}
+              flexDirection={"row"}
+              sx={{
+                height: "100%",
+
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <InsertDriveFileOutlinedIcon sx={{ fontSize: 100 }} />
+              <Typography
+                variant="body1"
+                sx={{ textAlign: "center", fontSize: 24 }}
+              >
+                No submissions found.
+              </Typography>
+            </Box>
           )}
           {submissions.length > 0 && (
             <Box

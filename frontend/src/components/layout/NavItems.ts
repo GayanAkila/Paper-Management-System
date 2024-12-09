@@ -10,7 +10,7 @@ import {
   CardMembership,
   LocalPostOffice,
 } from "@mui/icons-material";
-import { NavItem, UserRole } from "../types/types";
+import { NavItem, UserRole } from "../../types/types";
 
 export const navItems: NavItem[] = [
   {

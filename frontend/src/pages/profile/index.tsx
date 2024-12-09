@@ -1,29 +1,90 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { useState } from "react";
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+} from "@mui/material";
 import ProfileView from "./components/ProfileView";
-import { useAppSelector } from "../../store/store";
-import { logout } from "../../store/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+import { logout, updateUser } from "../../store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
+import { signOut } from "@firebase/auth";
+import { auth } from "../../config/firebase";
+import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
 
 const Profile = () => {
   const user = useAppSelector((state) => state.auth.user);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    displayName: user?.displayName || "",
+    email: user?.email || "",
+  });
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      dispatch(logout());
+      navigate("/auth");
+    } catch (error) {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: (error as Error).message,
+          type: "error",
+        })
+      );
+    }
+  };
+
+  const handleEditDialogOpen = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditDialogClose = () => {
+    setIsEditDialogOpen(false);
+    // Reset form data
+    setEditFormData({
+      displayName: user?.displayName || "",
+      email: user?.email || "",
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleProfileUpdate = async () => {
+    try {
+      await dispatch(updateUser(editFormData));
+      handleEditDialogClose();
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
+  };
 
   const profileData = {
     name: user?.displayName || "user",
-    email: user?.email || " ",
-
+    email: user?.email || "",
     profilePicture: user?.photoURL || "",
   };
 
-  function dispatch(arg0: any) {
-    throw new Error("Function not implemented.");
-  }
-
   return (
-    <Box height={"90%"}>
-      {/* Fixed Header */}
-
-      <Typography variant="h4">Profile</Typography>
+    <Box height={"100%"} pb={4}>
+      <Typography variant="h4" fontWeight={500}>
+        Profile
+      </Typography>
       <Box
         display={"flex"}
         height={"100%"}
@@ -32,8 +93,12 @@ const Profile = () => {
       >
         <ProfileView profileData={profileData} />
 
-        <Stack p={2} display={"flex"} direction={"row"} spacing={2} width={500}>
-          <Button variant="contained" sx={{ height: 45, borderRadius: 1.5 }}>
+        <Stack p={2} display={"flex"} direction={"row"} spacing={2}>
+          <Button
+            variant="contained"
+            sx={{ height: 45, borderRadius: 1.5 }}
+            onClick={handleEditDialogOpen}
+          >
             Edit Profile
           </Button>
           <Button variant="outlined" sx={{ height: 45, borderRadius: 1.5 }}>
@@ -43,14 +108,46 @@ const Profile = () => {
             variant="outlined"
             color="error"
             sx={{ height: 45, borderRadius: 1.5 }}
-            onClick={() => {
-              dispatch(logout());
-              navigate("/auth");
-            }}
+            onClick={handleLogout}
           >
             Logout
           </Button>
         </Stack>
+
+        {/* Edit Profile Dialog */}
+        <Dialog
+          open={isEditDialogOpen}
+          onClose={handleEditDialogClose}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogContent>
+            <Stack spacing={3} sx={{ mt: 2 }}>
+              <TextField
+                name="displayName"
+                label="Name"
+                fullWidth
+                value={editFormData.displayName}
+                onChange={handleInputChange}
+              />
+              <TextField
+                name="email"
+                label="Email"
+                fullWidth
+                value={editFormData.email}
+                onChange={handleInputChange}
+                disabled // Email change usually requires verification
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleEditDialogClose}>Cancel</Button>
+            <Button onClick={handleProfileUpdate} variant="contained">
+              Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

@@ -1,23 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
 import {
-  Box,
-  Typography,
-  Chip,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Stack,
-} from "@mui/material";
-import {
-  Download as DownloadIcon,
   Description as CertificateIcon,
   Email as EmailIcon,
   Preview as PreviewIcon,
-  Description,
 } from "@mui/icons-material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { useAppDispatch, useAppSelector } from "../../store/store";
@@ -26,7 +12,6 @@ import {
   generateCertificate,
   sendCertificateEmails,
 } from "../../store/slices/certificateSlice";
-import { formatDate } from "../../utils/utils";
 import { State, SubmissionStatus } from "../../types/types";
 import ViewCertificatesDialog from "./components/ViewCertificatesDialog";
 
@@ -38,20 +23,22 @@ const Certificates = () => {
   const { generateState, sendState } = useAppSelector(
     (state) => state.certificate
   );
-
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCertificates, setSelectedCertificates] = useState<any[]>([]);
 
+  // Fetch all submissions
   useEffect(() => {
     dispatch(fetchAllSubmissions());
   }, [dispatch]);
 
+  // Filter approved submissions
   const approvedSubmissions = allSubmissions.filter(
     (submission) =>
       submission.status === SubmissionStatus.approved ||
       submission.status === SubmissionStatus.needsRevision
   );
 
+  // Generate certificate for a submission
   const handleGenerateCertificate = async (submissionId: string) => {
     try {
       await dispatch(generateCertificate(submissionId)).unwrap();
@@ -61,6 +48,7 @@ const Certificates = () => {
     }
   };
 
+  // Send certificate emails for a submission
   const handleSendEmails = async (submissionId: string) => {
     try {
       await dispatch(sendCertificateEmails(submissionId)).unwrap();
@@ -105,16 +93,17 @@ const Certificates = () => {
       headerClassName: "datagrid-header",
       renderCell: (params) => (
         <Chip
-          label={params.value}
+          label={params.value === "Research Paper" ? "Research" : "Project"}
           color={params.value === "Research Paper" ? "primary" : "secondary"}
           variant="outlined"
           size="small"
+          sx={{ minWidth: 100 }}
         />
       ),
     },
     {
       field: "certificatesEmailed",
-      headerName: "Sent Status",
+      headerName: "Email Status",
       flex: 1,
       align: "center",
       headerAlign: "center",
@@ -124,9 +113,10 @@ const Certificates = () => {
         return (
           <Chip
             label={emailsSent ? "Sent" : "Not Sent"}
-            color={emailsSent ? "primary" : "secondary"}
+            color={emailsSent ? "success" : "secondary"}
             variant="filled"
             size="small"
+            sx={{ minWidth: 80 }}
           />
         );
       },
@@ -211,13 +201,13 @@ const Certificates = () => {
 
   return (
     <Box>
-      <Typography variant="h4" mb={3}>
+      <Typography variant="h4" fontWeight={500} mb={2}>
         Certificates
       </Typography>
 
       <Box
         sx={{
-          height: "calc(100vh - 220px)",
+          height: "calc(100vh - 200px)",
           width: "100%",
           "& .MuiDataGrid-root": {
             border: "none",

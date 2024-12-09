@@ -13,6 +13,7 @@ import {
   Avatar,
   List,
   Divider,
+  TextField,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -20,6 +21,8 @@ import {
 } from "@mui/icons-material";
 import { Submission } from "../../../store/slices/submissionSlice";
 import { formatDate } from "../../../utils/utils";
+import StatusChip from "../../../components/StatusChip";
+import { Description as DocumentIcon } from "@mui/icons-material";
 
 interface ViewReviewDialogProps {
   open: boolean;
@@ -28,41 +31,6 @@ interface ViewReviewDialogProps {
 }
 
 const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
-  const getDecisionChip = (decision: string) => {
-    const styles = {
-      Approved: {
-        bgcolor: "#DEF7EC",
-        color: "#059669",
-      },
-      Rejected: {
-        bgcolor: "#FEE2E2",
-        color: "#DC2626",
-      },
-      "Approved with changes": {
-        bgcolor: "#FEF3C7",
-        color: "#D97706",
-      },
-    };
-
-    const style = styles[decision as keyof typeof styles] || styles["Approved"];
-
-    return (
-      <Chip
-        label={decision}
-        sx={{
-          bgcolor: style.bgcolor,
-          color: style.color,
-          height: "24px",
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          "& .MuiChip-label": {
-            px: 1.5,
-          },
-        }}
-      />
-    );
-  };
-
   return (
     <Dialog
       open={open}
@@ -80,21 +48,32 @@ const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-
           p: 2,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Review Details
-        </Typography>
+        <Box
+          gap={1}
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            alignContent: "center",
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Feedbacks
+          </Typography>
+          <StatusChip status={paper.reviews?.finalDecision || "submitted"} />
+        </Box>
+
         <IconButton onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       <Divider />
       <DialogContent sx={{ p: 3 }}>
-        <Stack spacing={3}>
-          <Box>
+        <Stack spacing={1}>
+          <Box sx={{ pr: 2, pl: 2 }}>
             <Typography variant="subtitle2" color="text.secondary">
               Paper Title
             </Typography>
@@ -104,72 +83,56 @@ const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
           </Box>
 
           <Box>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ mb: 1 }}
-            >
-              Decision
-            </Typography>
-            {getDecisionChip(paper.reviews?.finalDecision || "submitted")}
-          </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              borderRadius: 1,
-              p: 1,
-              bgcolor: "white",
-            }}
-          >
-            <List sx={{ mb: 2 }}>
+            <List sx={{ mb: 1 }}>
               {paper.reviews?.comments.map((comment, index) => (
                 <ListItem
                   key={index}
                   sx={{
                     flexDirection: "column",
                     alignItems: "flex-start",
-                    bgcolor: (theme) => theme.palette.background.default,
                     borderRadius: 1,
-                    mb: 2,
+                    mb: 1,
                     p: 2,
                   }}
                 >
                   <Box
                     sx={{
-                      display: "flex",
                       justifyContent: "space-between",
                       width: "100%",
                       mb: 1,
                     }}
                   >
-                    <Typography
-                      variant="subtitle2"
-                      color="primary"
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        alignContent: "center",
+                        gap: 2,
+                        p: 1,
+                        mb: 1,
+                        borderRadius: 1,
+                        bgcolor: (theme) =>
+                          theme.palette.background.lightBackground,
+                      }}
                     >
-                      <Avatar
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          fontSize: "0.75rem",
-                          bgcolor: "primary.main",
-                        }}
-                      >
-                        {comment.reviewer.charAt(0)}
-                      </Avatar>
-                      {comment.reviewer}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDate(comment.submittedAt)}
-                    </Typography>
+                      <Typography>{comment.reviewer}</Typography>
+                      <Typography variant="body2">
+                        {formatDate(comment.submittedAt)}
+                      </Typography>
+                    </Box>
+                    <TextField
+                      multiline
+                      label="Comment"
+                      value={comment.comments}
+                      InputProps={{
+                        readOnly: true,
+                      }}
+                      fullWidth
+                      sx={{ mt: 1 }}
+                    />
                   </Box>
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    {comment.comments}
-                  </Typography>
-                  {/* {comment.fileUrl && (
+                  {comment.fileUrl && (
                     <Button
                       startIcon={<DocumentIcon />}
                       variant="outlined"
@@ -179,7 +142,7 @@ const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
                     >
                       View Review Document
                     </Button>
-                  )} */}
+                  )}
                 </ListItem>
               ))}
             </List>

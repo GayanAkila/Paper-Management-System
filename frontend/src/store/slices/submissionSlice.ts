@@ -26,7 +26,7 @@ export interface certificate {
 export interface Submission {
   id: string;
   title: string;
-  author: string; // (userId) one who made the submission
+  author: string; 
   authors: Author[];
   type: string;
   status: string;
@@ -45,6 +45,7 @@ interface SubmissionsState {
   fetchState: State;
   updateState: State;
   uploadState: State;
+  reUploadState:State;
   stateMessage: string;
   assignReviewersState: State;
   getReviewsState: State;
@@ -58,6 +59,7 @@ const initialState: SubmissionsState = {
   fetchState: State.idle,
   updateState: State.idle,
   uploadState: State.idle,
+  reUploadState:State.idle,
   assignReviewersState: State.idle,
   getReviewsState: State.idle,
   stateMessage: "",
@@ -478,6 +480,18 @@ const submissionsSlice = createSlice({
       .addCase(getReviews.rejected, (state) => {
         state.getReviewsState = State.failed;
         state.stateMessage = "Failed to fetch reviews.";
+      })
+      .addCase(reSubmission.pending, (state) => {
+        state.reUploadState = State.loading;
+        state.stateMessage = "Resubmitting...";
+      })
+      .addCase(reSubmission.fulfilled, (state) => {
+        state.reUploadState = State.success;
+        state.stateMessage = "Resubmission successful.";
+      })
+      .addCase(reSubmission.rejected, (state) => {
+        state.reUploadState = State.failed;
+        state.stateMessage = "Failed to resubmit.";
       });
   },
 });

@@ -27,13 +27,13 @@ import {
   addUser,
   updateUser,
   deleteUser,
-  User,
 } from "../../store/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
 import UserEditDialog from "./components/UserEditDialog";
 import { LoadingButton } from "@mui/lab";
 import { appConfig, firebaseConfig } from "../../config/config";
+import { User } from "../../types/types";
 
 const Users = () => {
   const dispatch = useAppDispatch();
@@ -247,7 +247,9 @@ const Users = () => {
           mb: 1,
         }}
       >
-        <Typography variant="h4">User Management</Typography>
+        <Typography variant="h4" fontWeight={500}>
+          User Management
+        </Typography>
         <Button
           variant="contained"
           startIcon={<PersonAddIcon />}

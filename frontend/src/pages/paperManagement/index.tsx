@@ -32,6 +32,7 @@ import { fetchAllUsers } from "../../store/slices/userSlice";
 import AddReviewerDialog from "./components/AddReviewerDialog";
 import ViewReviewDialog from "./components/ViewReviewDialog";
 import { formatDate } from "../../utils/utils";
+import StatusChip from "../../components/StatusChip";
 
 const Papers = () => {
   const dispatch = useAppDispatch();
@@ -45,56 +46,6 @@ const Papers = () => {
     useState(false);
   const [selectedPaper, setSelectedPaper] =
     useState<Partial<Submission> | null>(null);
-
-  const getStatusChip = (status: string) => {
-    const statusStyles = {
-      "in review": {
-        bgcolor: "#E2F5FF",
-        color: "#59A8D4",
-        label: "Under Review",
-      },
-      submitted: {
-        bgcolor: "#EEF2FF",
-        color: "#818CF8",
-        label: "Submitted",
-      },
-      approved: {
-        bgcolor: "#ECFDF5",
-        color: "#34D399",
-        label: "Approved",
-      },
-      "needs revision": {
-        bgcolor: "#FEF3C7",
-        color: "#F59E0B",
-        label: "Approved with changes",
-      },
-      Rejected: {
-        bgcolor: "#FEE2E2",
-        color: "#EF4444",
-        label: "Rejected",
-      },
-    };
-
-    const style =
-      statusStyles[status as keyof typeof statusStyles] ||
-      statusStyles.submitted;
-
-    return (
-      <Chip
-        label={style.label}
-        sx={{
-          bgcolor: style.bgcolor,
-          color: style.color,
-          height: "24px",
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          "& .MuiChip-label": {
-            px: 1.5,
-          },
-        }}
-      />
-    );
-  };
 
   const reviwersList = useMemo(
     () => users.filter((user) => user.role === "reviewer"),
@@ -257,7 +208,9 @@ const Papers = () => {
       headerAlign: "center",
       flex: 0.8,
       headerClassName: "datagrid-header",
-      renderCell: (params) => getStatusChip(params.value),
+      renderCell: (params) => {
+        return <StatusChip status={params.value} />;
+      },
     },
     {
       field: "actions",
@@ -331,12 +284,14 @@ const Papers = () => {
 
   return (
     <Box>
-      <Typography variant="h4">Paper Management</Typography>
+      <Typography variant="h4" fontWeight={500} mb={2}>
+        Paper Management
+      </Typography>
 
       {/* DataGrid */}
       <Box
         sx={{
-          height: "calc(100vh - 220px)",
+          height: "calc(100vh - 200px)",
           width: "100%",
           "& .MuiDataGrid-root": {
             border: "none",

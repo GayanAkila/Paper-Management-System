@@ -19,6 +19,7 @@ import {
   Button,
   Avatar,
   Tooltip,
+  TextField,
 } from "@mui/material";
 import {
   MoreVert as MoreVertIcon,
@@ -31,6 +32,8 @@ import {
 } from "@mui/icons-material";
 import { Submission } from "../../../store/slices/submissionSlice";
 import { formatDate } from "../../../utils/utils";
+import StatusChip from "../../../components/StatusChip";
+import { useAppSelector } from "../../../store/store";
 
 interface SubmissionCardProps {
   submission: Submission;
@@ -45,6 +48,7 @@ const SubmissionCard = ({
   onDelete,
   onResubmit,
 }: SubmissionCardProps) => {
+  const { deadlines } = useAppSelector((state) => state.settings);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
 
@@ -62,40 +66,6 @@ const SubmissionCard = ({
 
   const handleFeedbackClose = () => {
     setFeedbackOpen(false);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "submitted":
-        return "#EDEDFF";
-      case "approved":
-        return "#DEF8EE";
-      case "rejected":
-        return "rgba(28, 28, 28, 0.05)";
-      case "needs revision":
-        return "#FFFBD4";
-      case "in review":
-        return "#E2F5FF";
-      default:
-        return "#EFF6FF";
-    }
-  };
-
-  const getStatusTextColor = (status: string) => {
-    switch (status) {
-      case "submitted":
-        return "#8A8CD9";
-      case "approved":
-        return "#4AA785";
-      case "rejected":
-        return "rgba(28, 28, 28, 0.4)";
-      case "needs revision":
-        return "#FFC555";
-      case "in review":
-        return "#59A8D4";
-      default:
-        return "#EFF6FF";
-    }
   };
 
   return (
@@ -142,7 +112,7 @@ const SubmissionCard = ({
               elevation: 0,
               sx: {
                 filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.1))",
-                width: 140,
+                width: 160,
               },
             }}
             transformOrigin={{ horizontal: "right", vertical: "top" }}
@@ -172,19 +142,20 @@ const SubmissionCard = ({
                 Edit
               </MenuItem>
             )}
-            {submission.status === "needs revision" && (
-              <MenuItem
-                onClick={() => {
-                  onResubmit?.();
-                  handleMenuClose();
-                }}
-              >
-                <ListItemIcon>
-                  <EditIcon fontSize="small" />
-                </ListItemIcon>
-                Resubmit
-              </MenuItem>
-            )}
+            {submission.status === "needs revision" &&
+              Date.parse(deadlines.resubmission) < Date.now() && (
+                <MenuItem
+                  onClick={() => {
+                    onResubmit?.();
+                    handleMenuClose();
+                  }}
+                >
+                  <ListItemIcon>
+                    <EditIcon fontSize="small" />
+                  </ListItemIcon>
+                  Resubmit
+                </MenuItem>
+              )}
 
             {submission.status === "submitted" && (
               <MenuItem
@@ -215,7 +186,7 @@ const SubmissionCard = ({
               bgcolor: "white",
             }}
           >
-            <Typography color="text.secondary" sx={{ width: 100 }}>
+            <Typography color="text.secondary" sx={{ width: 150 }}>
               Author/s
             </Typography>
             <Stack spacing={1} display={"flex"} direction={"row"}>
@@ -257,7 +228,7 @@ const SubmissionCard = ({
               bgcolor: "white",
             }}
           >
-            <Typography color="text.secondary" sx={{ width: 100 }}>
+            <Typography color="text.secondary" sx={{ width: 150 }}>
               Type
             </Typography>
             <Typography color="text.primary" fontWeight={500}>
@@ -276,18 +247,10 @@ const SubmissionCard = ({
               bgcolor: "white",
             }}
           >
-            <Typography color="text.secondary" sx={{ width: 100 }}>
+            <Typography color="text.secondary" sx={{ width: 150 }}>
               Status
             </Typography>
-            <Chip
-              label={submission.status}
-              sx={{
-                bgcolor: getStatusColor(submission.status),
-                color: getStatusTextColor(submission.status),
-                fontWeight: 500,
-                height: 24,
-              }}
-            />
+            <StatusChip status={submission.status} />
           </Box>
 
           {/* Submission Date */}
@@ -301,7 +264,7 @@ const SubmissionCard = ({
               bgcolor: "white",
             }}
           >
-            <Typography color="text.secondary" sx={{ width: 100 }}>
+            <Typography color="text.secondary" sx={{ width: 150 }}>
               Submitted on
             </Typography>
             <Typography color="text.primary">
@@ -320,7 +283,7 @@ const SubmissionCard = ({
               bgcolor: "white",
             }}
           >
-            <Typography color="text.secondary" sx={{ width: 100 }}>
+            <Typography color="text.secondary" sx={{ width: 150 }}>
               Feedback
             </Typography>
             {submission.reviews?.comments?.length ?? 0 > 0 ? (
@@ -366,10 +329,20 @@ const SubmissionCard = ({
               alignContent: "center",
             }}
           >
-            <Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                alignContent: "center",
+                gap: 2,
+              }}
+            >
               <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                Reviewer Feedback
+                Feedbacks
               </Typography>
+
+              <StatusChip status={submission.status} />
             </Box>
             <IconButton onClick={handleFeedbackClose} size="small">
               <CloseIcon />
@@ -385,7 +358,6 @@ const SubmissionCard = ({
                 sx={{
                   flexDirection: "column",
                   alignItems: "flex-start",
-                  bgcolor: (theme) => theme.palette.background.default,
                   borderRadius: 1,
                   mb: 2,
                   p: 2,
@@ -393,36 +365,41 @@ const SubmissionCard = ({
               >
                 <Box
                   sx={{
-                    display: "flex",
                     justifyContent: "space-between",
                     width: "100%",
                     mb: 1,
                   }}
                 >
-                  <Typography
-                    variant="subtitle2"
-                    color="primary"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      alignContent: "center",
+                      gap: 2,
+                      p: 1,
+                      mb: 1,
+                      borderRadius: 1,
+                      bgcolor: (theme) =>
+                        theme.palette.background.lightBackground,
+                    }}
                   >
-                    <Avatar
-                      sx={{
-                        width: 24,
-                        height: 24,
-                        fontSize: "0.75rem",
-                        bgcolor: "primary.main",
-                      }}
-                    >
-                      {comment.reviewer.charAt(0)}
-                    </Avatar>
-                    {comment.reviewer}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDate(comment.submittedAt)}
-                  </Typography>
+                    <Typography>{comment.reviewer}</Typography>
+                    <Typography variant="body2">
+                      {formatDate(comment.submittedAt)}
+                    </Typography>
+                  </Box>
+                  <TextField
+                    multiline
+                    label="Comment"
+                    value={comment.comments}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    fullWidth
+                    sx={{ mt: 1 }}
+                  />
                 </Box>
-                <Typography variant="body2" sx={{ mb: 2 }}>
-                  {comment.comments}
-                </Typography>
                 {comment.fileUrl && (
                   <Button
                     startIcon={<DocumentIcon />}
