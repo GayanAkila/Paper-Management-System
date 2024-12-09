@@ -4,6 +4,8 @@ const fs = require('fs');
 const { db, bucket } = require('../firebase/firebaseConfig');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const { generateCertificatePDF } = require('../utils/certificateGenerator');
+
 
 // @desc    Generate and send certificates for approved submissions
 // @route   POST /api/v1/certificates/:id
@@ -12,6 +14,7 @@ exports.generateCertificates = async (req, res) => {
   const { id } = req.params; // Submission ID
 
   try {
+    // Get submission data
     const submissionRef = db.collection('submissions').doc(id);
     const submissionDoc = await submissionRef.get();
 
@@ -20,63 +23,49 @@ exports.generateCertificates = async (req, res) => {
     }
 
     const submission = submissionDoc.data();
+
+    // Verify submission status
     if (submission.status !== 'approved' && submission.status !== 'needs revision') {
-      return res.status(400).json({ message: 'Certificates can only be generated for approved submissions.' });
+      return res.status(400).json({ 
+        message: 'Certificates can only be generated for approved submissions.' 
+      });
     }
 
-    // Array to store certificate URLs
     const certificateUrls = [];
 
+    // Generate certificate for each author
     for (const author of submission.authors) {
       const { name, email } = author;
+      const certificateId = uuidv4();
 
-      // Generate a unique filename for each author's certificate
-      const fileName = `certificates/certificate_${uuidv4()}.pdf`;
+      // Prepare template data
+      const templateData = {
+        participantName: name,
+        participantRole: submission.type === 'project' ? 'Project Author' : 'Research Paper Author',
+        eventDate: 'December 15, 2024',
+        deanName: 'Prof. John Doe',
+        coordinatorName: 'Dr. Jane Smith',
+        certificateId,
+        // logoUrl: 'path/to/your/logo.png' // Update with actual logo path
+      };
 
-      // Generate certificate PDF
-      const doc = new PDFDocument();
-      const tempDir = path.join(__dirname, '../temp');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir); // Ensure the temp directory exists
-      }
-      const localFilePath = path.join(tempDir, path.basename(fileName));
-      const writeStream = fs.createWriteStream(localFilePath);
-      doc.pipe(writeStream);
+      // Generate PDF
+      const pdfBuffer = await generateCertificatePDF(templateData);
 
-      // Add certificate content
-      doc
-        .fontSize(20)
-        .text('Certificate of Approval', { align: 'center' })
-        .moveDown()
-        .fontSize(14)
-        .text(`This is to certify that ${name}`, { align: 'center' })
-        .text(`(${email})`, { align: 'center' })
-        .moveDown()
-        .text(`is recognized as an author of the submission titled "${submission.title}"`, { align: 'center' })
-        .text(`(${submission.type}), which has been approved.`, { align: 'center' })
-        .moveDown();
-
-      doc.end();
-
-      // Wait for the file to finish writing locally
-      await new Promise((resolve) => writeStream.on('finish', resolve));
-
-      console.log(`Certificate saved locally at: ${localFilePath}`);
-
-      // Upload file to Google Cloud Storage
-      const blob = bucket.file(fileName);
-      const blobStream = blob.createWriteStream();
-
-      await new Promise((resolve, reject) => {
-        blobStream.on('finish', resolve);
-        blobStream.on('error', reject);
-        blobStream.end(fs.readFileSync(localFilePath));
+      // Upload to Firebase Storage
+      const fileName = `certificates/certificate_${certificateId}.pdf`;
+      const file = bucket.file(fileName);
+      
+      await file.save(pdfBuffer, {
+        metadata: {
+          contentType: 'application/pdf'
+        }
       });
 
-      // Make the file publicly accessible
-      await blob.makePublic();
+      // Make file public
+      await file.makePublic();
 
-      // Get the public URL of the uploaded file
+      // Get public URL
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
       // Add to certificate URLs array
@@ -84,22 +73,21 @@ exports.generateCertificates = async (req, res) => {
         name,
         email,
         certificateUrl: publicUrl,
+        certificateId
       });
-
-      // Clean up the temporary local file
-      fs.unlinkSync(localFilePath);
     }
 
-    // Save certificate URLs to Firestore
+    // Update submission with certificate URLs
     await submissionRef.update({
       certificateUrls,
+      certificatesGeneratedAt: new Date()
     });
 
-    console.log('Certificates generated and uploaded for all authors.');
     res.status(200).json({
       message: 'Certificates generated and uploaded successfully.',
-      certificateUrls,
+      certificateUrls
     });
+
   } catch (error) {
     console.error('Error generating certificates:', error);
     res.status(500).json({ message: 'Failed to generate certificates.' });

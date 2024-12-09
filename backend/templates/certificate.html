@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BISSS Certificate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@400;600&display=swap');
+        
+        body {
+            width: 1123px; /* A4 width at 300 DPI */
+            height:794px; /* A4 height at 300 DPI */
+            margin: 0;
+            padding: 30px;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+            color: #1a1a1a;
+            background: #fff;
+        }
+
+        .certificate {
+            width: 100%;
+            height: 100%;
+            border: 25px solid #1976d2;
+            padding: 40px;
+            box-sizing: border-box;
+            position: relative;
+           background-color: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px; /* Reduced from 40px */
+            position: relative;
+        }
+
+        .logo {
+            width: 180px; /* Increased from 150px */
+            height: auto;
+            margin-bottom: 15px;
+            object-fit: contain;
+        }
+
+        .title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 48px;
+            color: #1976d2;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #666;
+            margin: 10px 0 0;
+        }
+
+        .content {
+            text-align: center;
+            margin: 40px 0; /* Reduced from 60px */
+            line-height: 1.6;
+        }
+
+        .participant-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 36px;
+            color: #1a1a1a;
+            margin: 15px 0; /* Reduced from 20px */
+        }
+
+        .description {
+            font-size: 18px;
+            margin: 15px 0; /* Reduced from 20px */
+        }
+
+        .event-details {
+            font-size: 20px;
+            color: #1976d2;
+            margin: 15px 0;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 50px; /* Increased from 40px to provide more space */
+            left: 40px;
+            right: 40px;
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+        }
+
+        .signature {
+            flex: 1;
+            /* margin: 0 20px; Increased from 20px */
+            position: relative;
+        }
+
+        .signature-image {
+            width: 120px; /* Adjust based on your signature image size */
+            height: auto;
+            position: absolute;
+            bottom: 100px; /* Position above the line */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .signature-line {
+            width: 250px; /* Increased from 200px */
+            border-top: 2px solid #1a1a1a;
+            margin: 10px auto;
+        }
+
+        .signature-name {
+            font-weight: 600;
+            margin: 10px 0 5px; /* Added more space above name */
+            font-size: 16px; /* Added specific size */
+        }
+
+        .signature-title {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4; /* Added line height for better readability */
+        }
+
+        .certificate-id {
+            position: absolute;
+            bottom: 20px; /* Increased from 10px */
+            right: 40px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="header">
+            <img src="../assets/logo.png" alt="BISSS Logo" class="logo">
+            <h1 class="title">Certificate of Participation</h1>
+            <p class="subtitle">Business Information System Student Symposium</p>
+        </div>
+
+        <div class="content">
+            <p class="description">This is to certify that</p>
+            <p class="participant-name">{{participantName}}</p>
+            <p class="description">
+                has participated in the<br>
+                <span class="event-details">Business Information System Student Symposium (BISSS)</span><br>
+                held on <strong>{{eventDate}}</strong> as a <strong>{{participantRole}}</strong>
+            </p>
+            <p class="description">
+                We appreciate their valuable contribution to the success of this symposium.
+            </p>
+        </div>
+
+        <div class="footer">
+            <div class="signature">
+                <img src="../assets/logo.png" alt="Dean's Signature" class="signature-image">
+                <div class="signature-line"></div>
+                <p class="signature-name">{{deanName}}</p>
+                <p class="signature-title">Dean<br>Faculty of Management Studies and Commerce</p>
+            </div>
+            <div class="signature">
+                <img src="../assets/logo.png" alt="Coordinator's Signature" class="signature-image">
+                <div class="signature-line"></div>
+                <p class="signature-name">{{coordinatorName}}</p>
+                <p class="signature-title">Event Coordinator<br>BISSS</p>
+            </div>
+        </div>
+
+        <div class="certificate-id">Certificate ID: {{certificateId}}</div>
+    </div>
+</body>
+</html>
