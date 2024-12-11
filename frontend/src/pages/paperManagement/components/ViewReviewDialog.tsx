@@ -63,7 +63,6 @@ const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Feedbacks
           </Typography>
-          <StatusChip status={paper.reviews?.finalDecision || "submitted"} />
         </Box>
 
         <IconButton onClick={onClose} size="small">
@@ -117,9 +116,7 @@ const ViewReviewDialog = ({ open, onClose, paper }: ViewReviewDialogProps) => {
                       }}
                     >
                       <Typography>{comment.reviewer}</Typography>
-                      <Typography variant="body2">
-                        {formatDate(comment.submittedAt)}
-                      </Typography>
+                      <StatusChip status={comment.decision || "in review"} />
                     </Box>
                     <TextField
                       multiline

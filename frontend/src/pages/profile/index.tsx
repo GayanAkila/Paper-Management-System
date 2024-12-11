@@ -11,6 +11,7 @@ import {
   TextField,
 } from "@mui/material";
 import ProfileView from "./components/ProfileView";
+import ChangePassword from "./components/ChangePassword";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import { logout, updateUser } from "../../store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,8 @@ const Profile = () => {
   const dispatch = useAppDispatch();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] =
+    useState(false);
   const [editFormData, setEditFormData] = useState({
     displayName: user?.displayName || "",
     email: user?.email || "",
@@ -50,7 +53,6 @@ const Profile = () => {
 
   const handleEditDialogClose = () => {
     setIsEditDialogOpen(false);
-    // Reset form data
     setEditFormData({
       displayName: user?.displayName || "",
       email: user?.email || "",
@@ -101,7 +103,11 @@ const Profile = () => {
           >
             Edit Profile
           </Button>
-          <Button variant="outlined" sx={{ height: 45, borderRadius: 1.5 }}>
+          <Button
+            variant="outlined"
+            sx={{ height: 45, borderRadius: 1.5 }}
+            onClick={() => setIsChangePasswordDialogOpen(true)}
+          >
             Change Password
           </Button>
           <Button
@@ -120,6 +126,9 @@ const Profile = () => {
           onClose={handleEditDialogClose}
           maxWidth="sm"
           fullWidth
+          PaperProps={{
+            sx: { borderRadius: 2 },
+          }}
         >
           <DialogTitle>Edit Profile</DialogTitle>
           <DialogContent>
@@ -137,17 +146,33 @@ const Profile = () => {
                 fullWidth
                 value={editFormData.email}
                 onChange={handleInputChange}
-                disabled // Email change usually requires verification
+                disabled
               />
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleEditDialogClose}>Cancel</Button>
-            <Button onClick={handleProfileUpdate} variant="contained">
+          <DialogActions sx={{ p: 2 }}>
+            <Button
+              onClick={handleEditDialogClose}
+              variant="outlined"
+              sx={{ borderRadius: 1.5 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleProfileUpdate}
+              variant="contained"
+              sx={{ borderRadius: 1.5 }}
+            >
               Save Changes
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Change Password Dialog */}
+        <ChangePassword
+          isOpen={isChangePasswordDialogOpen}
+          onClose={() => setIsChangePasswordDialogOpen(false)}
+        />
       </Box>
     </Box>
   );

@@ -1,6 +1,7 @@
-import { Box, Typography, Chip, IconButton } from "@mui/material";
+import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ReviewIcon from "@mui/icons-material/RateReview";
+import DescriptionIcon from "@mui/icons-material/Description";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReviewDialog from "./components/ReviewDialog";
 import {
@@ -16,6 +17,7 @@ import {
   Submission,
 } from "../../store/slices/submissionSlice";
 import { State } from "../../types/types";
+import StatusChip from "../../components/StatusChip";
 
 const FeedbackPanel = () => {
   const dispatch = useAppDispatch();
@@ -27,40 +29,72 @@ const FeedbackPanel = () => {
     useState<Submission | null>(null);
   const user = useAppSelector((state) => state.auth.user);
 
+  const renderUserReviewDecision = (params: GridRenderCellParams) => {
+    if (!user || !params.value) {
+      return "";
+    }
+
+    const reviews = Array.isArray(params.value.comments)
+      ? params.value.comments
+      : [];
+    const userReview = reviews.find(
+      (review: { reviewer: string }) => review.reviewer === user.email
+    );
+
+    if (!userReview) {
+      return <StatusChip status={"Not Reviewed"} />;
+    }
+
+    const decision = userReview.decision;
+    const hasAttachment = !!userReview.fileUrl;
+
+    return (
+      <Box>
+        <StatusChip status={decision} />
+        {/* <Chip
+          label={decision}
+          color={
+            decision === "approve"
+              ? "success"
+              : decision === "reject"
+              ? "error"
+              : "warning"
+          }
+          variant="outlined"
+        /> */}
+        {hasAttachment && (
+          <Tooltip title="Review includes attachment">
+            <DescriptionIcon fontSize="small" color="action" />
+          </Tooltip>
+        )}
+      </Box>
+    );
+  };
+
   useEffect(() => {
     dispatch(fetchAllSubmissions());
-  }, []);
+  }, [dispatch]);
 
   const reviewerPapers = useMemo(() => {
     if (!user?.email || !Array.isArray(allSubmissions)) {
-      console.error("User email or allSubmissions array is not defined");
       return [];
     }
 
-    const filteredSubmissions = allSubmissions.filter((submission) => {
-      if (!Array.isArray(submission.reviewers)) {
-        console.error(
-          "Reviewers field is not an array in submission:",
-          submission
-        );
-        return false;
-      }
-      return submission.reviewers.includes(user.email);
-    });
-    return filteredSubmissions;
+    return allSubmissions.filter((submission) =>
+      Array.isArray(submission.reviewers)
+        ? submission.reviewers.includes(user.email)
+        : false
+    );
   }, [user?.email, allSubmissions]);
 
-  const onDownload = (paper: Partial<Submission>) => {
-    window.open(paper.fileUrl!, "_blank");
-  };
+  const onDownload = useCallback((url: string) => {
+    if (url) window.open(url, "_blank");
+  }, []);
 
-  const handleReviewClick = useCallback(
-    (submission: Submission) => {
-      setSelectedSubmission(submission);
-      setReviewDialogOpen(true);
-    },
-    [selectedSubmission]
-  );
+  const handleReviewClick = useCallback((submission: Submission) => {
+    setSelectedSubmission(submission);
+    setReviewDialogOpen(true);
+  }, []);
 
   const handleReviewSubmit = async (reviewData: {
     comment: string;
@@ -72,7 +106,6 @@ const FeedbackPanel = () => {
     const formData = new FormData();
     formData.append("comments", reviewData.comment);
     formData.append("decision", reviewData.decision);
-
     if (reviewData.file) {
       formData.append("file", reviewData.file);
     }
@@ -91,51 +124,6 @@ const FeedbackPanel = () => {
     }
   };
 
-  const getStatusChip = (status: string) => {
-    const statusStyles = {
-      "in review": {
-        bgcolor: "#EEF2FF",
-        color: "#818CF8",
-        label: "Pending",
-      },
-      approved: {
-        bgcolor: "#ECFDF5",
-        color: "#34D399",
-        label: "Approved",
-      },
-      "needs revision": {
-        bgcolor: "#FEF3C7",
-        color: "#F59E0B",
-        label: "Approved with changes",
-      },
-      rejected: {
-        bgcolor: "#FEE2E2",
-        color: "#EF4444",
-        label: "Rejected",
-      },
-    };
-
-    const style =
-      statusStyles[status as keyof typeof statusStyles] ||
-      statusStyles["in review"];
-
-    return (
-      <Chip
-        label={style.label}
-        sx={{
-          bgcolor: style.bgcolor,
-          color: style.color,
-          height: "24px",
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          "& .MuiChip-label": {
-            px: 1.5,
-          },
-        }}
-      />
-    );
-  };
-
   const columns: GridColDef[] = [
     {
       field: "title",
@@ -150,11 +138,9 @@ const FeedbackPanel = () => {
       headerClassName: "datagrid-header",
       renderCell: (params) => {
         const authors = params.value;
-        const authorNames = Array.isArray(authors)
+        return Array.isArray(authors)
           ? authors.map((author) => author.name).join(", ")
           : "N/A";
-
-        return <>{authorNames}</>;
       },
     },
     {
@@ -170,53 +156,55 @@ const FeedbackPanel = () => {
       align: "center",
       flex: 1,
       headerClassName: "datagrid-header",
-      renderCell: (params: GridRenderCellParams) => {
-        const date = new Date(params.value as string);
-        return date.toLocaleDateString();
-      },
+      renderCell: (params) =>
+        new Date(params.value as string).toLocaleDateString(),
     },
     {
-      field: "status",
-      headerName: "Status",
+      field: "reviews",
+      headerName: "Review Status",
       headerAlign: "center",
       align: "center",
       flex: 1,
       headerClassName: "datagrid-header",
-      renderCell: (params: GridRenderCellParams) => getStatusChip(params.value),
+      renderCell: renderUserReviewDecision,
     },
     {
       field: "actions",
       headerName: "Action",
       flex: 1,
       headerAlign: "right",
-
       headerClassName: "datagrid-header",
       sortable: false,
-      renderCell: (params: GridRenderCellParams) => (
+      renderCell: (params: GridRenderCellParams<Submission>) => (
         <Box
           sx={{
             display: "flex",
             gap: 1,
             height: "100%",
             alignItems: "center",
-            alignContent: "center",
             justifyContent: "flex-end",
           }}
         >
-          <IconButton
-            size="small"
-            onClick={() => onDownload(params.row)}
-            sx={{ color: (theme) => theme.palette.background.icon }}
-          >
-            <DownloadIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleReviewClick(params.row)}
-            sx={{ color: (theme) => theme.palette.background.icon }}
-          >
-            <ReviewIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Download Paper">
+            <IconButton
+              size="small"
+              onClick={() =>
+                params.row.fileUrl && onDownload(params.row.fileUrl)
+              }
+              sx={{ color: (theme) => theme.palette.background.icon }}
+            >
+              <DownloadIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Submit Review">
+            <IconButton
+              size="small"
+              onClick={() => handleReviewClick(params.row)}
+              sx={{ color: (theme) => theme.palette.background.icon }}
+            >
+              <ReviewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },

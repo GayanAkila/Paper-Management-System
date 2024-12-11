@@ -76,7 +76,10 @@ const Dashboard = () => {
 
     if (selectedSubmission && selectedSubmission.id && file) {
       formData.append("file", file);
-      dispatch(reSubmission({ id: selectedSubmission?.id || "", formData }));
+      dispatch(
+        reSubmission({ id: selectedSubmission?.id || "", formData })
+      ).unwrap();
+      dispatch(fetchSubmissionsByAuthor());
     }
   };
 
@@ -142,19 +145,18 @@ const Dashboard = () => {
 
       {/* Submission List */}
 
-      {fetchState === State.loading ||
-        (reUploadState === State.loading && (
-          <Stack height={"100%"}>
-            <Box overflow={"hidden"} sx={{ borderRadius: 4, flexGrow: 1 }}>
-              <Skeleton
-                variant="rounded"
-                animation="wave"
-                height={"100%"}
-                sx={{ borderRadius: 4 }}
-              />
-            </Box>
-          </Stack>
-        ))}
+      {(fetchState === State.loading || reUploadState === State.loading) && (
+        <Stack height={"100%"}>
+          <Box overflow={"hidden"} sx={{ borderRadius: 4, flexGrow: 1 }}>
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              height={"100%"}
+              sx={{ borderRadius: 4 }}
+            />
+          </Box>
+        </Stack>
+      )}
       {fetchState === State.success && (
         <>
           {submissions.length === 0 && (

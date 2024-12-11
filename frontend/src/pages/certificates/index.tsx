@@ -8,12 +8,12 @@ import {
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import { fetchAllSubmissions } from "../../store/slices/submissionSlice";
-import {
-  generateCertificate,
-  sendCertificateEmails,
-} from "../../store/slices/certificateSlice";
+import { sendCertificateEmails } from "../../store/slices/certificateSlice";
 import { State, SubmissionStatus } from "../../types/types";
 import ViewCertificatesDialog from "./components/ViewCertificatesDialog";
+import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
+import CertificatePreview from "./components/CertificatePreview";
+import "./components/CertificatePreview.css";
 
 const Certificates = () => {
   const dispatch = useAppDispatch();
@@ -24,12 +24,19 @@ const Certificates = () => {
     (state) => state.certificate
   );
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
   const [selectedCertificates, setSelectedCertificates] = useState<any[]>([]);
 
   // Fetch all submissions
   useEffect(() => {
     dispatch(fetchAllSubmissions());
   }, [dispatch]);
+
+  const handlePreviewCertificate = (submission: any) => {
+    setSelectedSubmission(submission);
+    setPreviewOpen(true);
+  };
 
   // Filter approved submissions
   const approvedSubmissions = allSubmissions.filter(
@@ -38,25 +45,48 @@ const Certificates = () => {
       submission.status === SubmissionStatus.needsRevision
   );
 
-  // Generate certificate for a submission
-  const handleGenerateCertificate = async (submissionId: string) => {
+  // In your Certificates.tsx
+
+  const handleSendCertificate = async (pdfBlobs: Blob[]) => {
     try {
-      await dispatch(generateCertificate(submissionId)).unwrap();
+      const formData = new FormData();
+      pdfBlobs.forEach((blob, index) => {
+        formData.append(
+          "certificates",
+          new File([blob], `certificate_${index}.pdf`, {
+            type: "application/pdf",
+          })
+        );
+      });
+
+      await dispatch(
+        sendCertificateEmails({
+          submissionId: selectedSubmission.id,
+          certificateFiles: formData,
+        })
+      ).unwrap();
+
       dispatch(fetchAllSubmissions());
+      setPreviewOpen(false);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Certificates generated and sent successfully",
+          type: "success",
+        })
+      );
     } catch (error) {
-      console.error("Error generating certificate:", error);
+      console.error("Error processing certificates:", error);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Failed to process certificates",
+          type: "error",
+        })
+      );
     }
   };
 
-  // Send certificate emails for a submission
-  const handleSendEmails = async (submissionId: string) => {
-    try {
-      await dispatch(sendCertificateEmails(submissionId)).unwrap();
-      dispatch(fetchAllSubmissions());
-    } catch (error) {
-      console.error("Error sending emails:", error);
-    }
-  };
+  // Remove handleGeneratePDF as it's no longer needed separately
 
   const columns: GridColDef[] = [
     {
@@ -131,65 +161,31 @@ const Certificates = () => {
       headerClassName: "datagrid-header",
       renderCell: (params) => {
         const submission = params.row;
-        const hasCertificates = submission.certificateUrls?.length > 0;
-        const emailsSent = submission.certificatesEmailed;
+        const certificatesSent = submission.certificatesEmailed;
 
         return (
-          <Box
-            sx={{
-              display: "flex",
-              gap: 0.5,
-              alignItems: "center",
-              justifyContent: "flex-end",
-            }}
-          >
-            {hasCertificates ? (
-              <>
-                {!emailsSent && (
-                  <Tooltip title="Send Certificates via Email">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleSendEmails(submission.id)}
-                    >
-                      <EmailIcon
-                        sx={{
-                          color: (theme) => theme.palette.background.icon,
-                          "&:hover": { color: "primary.main" },
-                        }}
-                      />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                <Tooltip title="View Certificates">
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setSelectedCertificates(submission.certificateUrls);
-                      setViewDialogOpen(true);
-                    }}
-                  >
-                    <PreviewIcon
-                      sx={{
-                        color: (theme) => theme.palette.background.icon,
-                        "&:hover": { color: "primary.main" },
-                      }}
-                    />
-                  </IconButton>
-                </Tooltip>
-              </>
+          <Box sx={{ display: "flex", gap: 0.5 }}>
+            {certificatesSent ? (
+              // If certificates are sent, show preview icon
+              <Tooltip title="View Certificates">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedCertificates(submission.certificateUrls);
+                    setViewDialogOpen(true);
+                  }}
+                >
+                  <PreviewIcon />
+                </IconButton>
+              </Tooltip>
             ) : (
+              // If certificates are not sent, show generate icon
               <Tooltip title="Generate Certificate">
                 <IconButton
                   size="small"
-                  onClick={() => handleGenerateCertificate(submission.id)}
-                  disabled={generateState === State.loading}
+                  onClick={() => handlePreviewCertificate(submission)}
                 >
-                  <CertificateIcon
-                    sx={{
-                      color: (theme) => theme.palette.background.icon,
-                      "&:hover": { color: "primary.main" },
-                    }}
-                  />
+                  <CertificateIcon />
                 </IconButton>
               </Tooltip>
             )}
@@ -245,6 +241,13 @@ const Certificates = () => {
           }}
         />
       </Box>
+
+      <CertificatePreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        submissionData={selectedSubmission}
+        handleSendCertificate={(pdfBlobs) => handleSendCertificate(pdfBlobs)}
+      />
 
       <ViewCertificatesDialog
         open={viewDialogOpen}

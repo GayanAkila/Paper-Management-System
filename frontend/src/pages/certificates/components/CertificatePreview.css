@@ -1,0 +1,16 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@400;600&display=swap');
+
+.certificate {
+    width: 1123px; /* A4 width at 300 DPI */
+    height: 794px; /* A4 height at 300 DPI */
+    margin: 0;
+    padding: 30px;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
+    color: #1a1a1a;
+    background: #fff;
+    border: 25px solid #1976d2;
+    position: relative;
+}
+

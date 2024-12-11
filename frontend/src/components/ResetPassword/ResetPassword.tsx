@@ -1,4 +1,4 @@
-import { Dispatch, FC, SetStateAction } from "react";
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -7,64 +7,83 @@ import {
   TextField,
   Button,
   Alert,
-  Box,
+  CircularProgress,
 } from "@mui/material";
+import { useAppDispatch, useAppSelector } from "../../store/store";
+import {
+  forgotPasswordAsync,
+  clearPasswordState,
+} from "../../store/slices/authSlice";
 
 interface ResetPasswordProps {
   isOpen: boolean;
   onClose: () => void;
-  handlePasswordReset: () => Promise<void>;
-  resetPasswordEmail: string;
-  resetPasswordSuccess: string | null;
-  resetPasswordError: string | null;
-  setResetPasswordEmail: Dispatch<SetStateAction<string>>;
+  email: string;
+  setEmail: (email: string) => void;
 }
 
-const ResetPassword: FC<ResetPasswordProps> = (props) => {
-  const {
-    isOpen,
-    onClose,
-    handlePasswordReset,
-    resetPasswordEmail,
-    resetPasswordSuccess,
-    resetPasswordError,
-    setResetPasswordEmail,
-  } = props;
+const ResetPassword: React.FC<ResetPasswordProps> = ({
+  isOpen,
+  onClose,
+  email,
+  setEmail,
+}) => {
+  const dispatch = useAppDispatch();
+  const { loading, error, success, message } = useAppSelector(
+    (state) => state.auth.passwordState
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    try {
+      await dispatch(forgotPasswordAsync({ email })).unwrap();
+    } catch (error) {
+      // Error is handled by the reducer
+    }
+  };
+
+  const handleClose = () => {
+    dispatch(clearPasswordState());
+    onClose();
+  };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Password Reset</DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 2 }}>
-          {resetPasswordSuccess && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {resetPasswordSuccess}
+    <Dialog open={isOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Reset Password</DialogTitle>
+      <form onSubmit={handleSubmit}>
+        <DialogContent>
+          {(error || success) && (
+            <Alert severity={success ? "success" : "error"} sx={{ mb: 2 }}>
+              {message || error}
             </Alert>
           )}
-          {resetPasswordError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {resetPasswordError}
-            </Alert>
-          )}
+
           <TextField
-            type="email"
-            value={resetPasswordEmail}
-            onChange={(e) => setResetPasswordEmail(e.target.value)}
-            label="Email"
-            fullWidth
             autoFocus
-            margin="dense"
+            label="Email Address"
+            type="email"
+            fullWidth
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading || success}
+            required
           />
-        </Box>
-      </DialogContent>
-      <DialogActions sx={{ p: 2, pt: 0 }}>
-        <Button onClick={onClose} color="inherit">
-          Cancel
-        </Button>
-        <Button onClick={handlePasswordReset} variant="contained">
-          Reset Password
-        </Button>
-      </DialogActions>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading || success || !email}
+          >
+            {loading ? <CircularProgress size={24} /> : "Send Reset Link"}
+          </Button>
+        </DialogActions>
+      </form>
     </Dialog>
   );
 };

@@ -1,6 +1,7 @@
 export enum SubmissionStatus {
-  inReview = "in review",
   submitted = "submitted",
+  inReview = "in review",
+  reviewed = "reviewed",
   approved = "approved",
   needsRevision = "needs revision",
   Rejected = "rejected",
@@ -28,10 +29,18 @@ export interface UserProfile {
   refreshToken: string;
 }
 
+export interface PasswordState {
+  loading: boolean;
+  error: string | null;
+  success: boolean;
+  message: string | null;
+}
+
 export interface AuthState {
   user: UserProfile | null;
   loading: boolean;
   error: string | null;
+  passwordState: PasswordState;
 }
 
 export interface NavItem {

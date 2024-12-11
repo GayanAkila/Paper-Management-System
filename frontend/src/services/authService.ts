@@ -68,10 +68,6 @@ export const registerUser = async (data: {
 
 export const loginUser = async (data: { email: string; password: string }) => {
   const response = await axiosInstance.post(`/auth/login`, data);
-  // console.log("Login response tokens:", {
-  //   hasIdToken: !!response.data.idToken,
-  //   tokenLength: response.data.idToken?.length,
-  // });
   saveAuthTokens(response.data);
   return response.data;
 };
@@ -79,7 +75,28 @@ export const loginUser = async (data: { email: string; password: string }) => {
 export const updateProfile = async (data: { name: string; email: string }) => {
   const response = await axiosInstance.put(`/auth/profile`, data);
   return response.data;
-}
+};
+
+export const changePassword = async (data: {
+  currentPassword: string;
+  newPassword: string;
+}) => {
+  const response = await axiosInstance.post(`/auth/change-password`, data);
+  return response.data;
+};
+
+export const forgotPassword = async (data: { email: string }) => {
+  const response = await axiosInstance.post(`/auth/forgot-password`, data);
+  return response.data;
+};
+
+export const resetPassword = async (data: {
+  oobCode: string;
+  newPassword: string;
+}) => {
+  const response = await axiosInstance.post(`/auth/reset-password`, data);
+  return response.data;
+};
 
 export const logoutUser = () => {
   localStorage.removeItem("idToken");
@@ -87,3 +104,32 @@ export const logoutUser = () => {
   localStorage.removeItem("expiresIn");
   localStorage.removeItem("expiresAt");
 };
+
+// Types for API responses
+export interface AuthResponse {
+  message: string;
+  error?: string;
+}
+
+export interface PasswordChangeResponse extends AuthResponse {
+  message: string;
+}
+
+export interface PasswordResetResponse extends AuthResponse {
+  message: string;
+}
+
+// Usage example types
+export interface PasswordChangeData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordData {
+  email: string;
+}
+
+export interface ResetPasswordData {
+  oobCode: string;
+  newPassword: string;
+}

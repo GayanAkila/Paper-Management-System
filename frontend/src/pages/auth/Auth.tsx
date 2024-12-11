@@ -347,11 +347,8 @@ const Auth = () => {
       <ResetPassword
         isOpen={resetPassword}
         onClose={() => setResetPassword(false)}
-        handlePasswordReset={async () => {}}
-        resetPasswordEmail={formData.email}
-        resetPasswordSuccess={""}
-        resetPasswordError={""}
-        setResetPasswordEmail={() => {}}
+        email={formData.email}
+        setEmail={(email) => setFormData((prev) => ({ ...prev, email }))}
       />
     </Stack>
   );

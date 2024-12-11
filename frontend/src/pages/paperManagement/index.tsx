@@ -17,14 +17,21 @@ import {
   ViewColumn as ColumnsIcon,
   FilterList as FilterIcon,
   Add,
+  CheckCircle as ApproveIcon,
 } from "@mui/icons-material";
-import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridToolbar,
+} from "@mui/x-data-grid";
 import { useAppDispatch, useAppSelector } from "../../store/store";
 import {
   fetchAllSubmissions,
   Submission,
   editSubmission,
   addReviewers,
+  editSubmissionStatus,
 } from "../../store/slices/submissionSlice";
 import SubmissionDialog from "../dashboard/components/SubmissionDialog";
 import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
@@ -33,15 +40,17 @@ import AddReviewerDialog from "./components/AddReviewerDialog";
 import ViewReviewDialog from "./components/ViewReviewDialog";
 import { formatDate } from "../../utils/utils";
 import StatusChip from "../../components/StatusChip";
+import { State, SubmissionStatus } from "../../types/types";
+import StatusDialog from "./components/StatusDialog";
 
 const Papers = () => {
   const dispatch = useAppDispatch();
-  const { allSubmissions, fetchState } = useAppSelector(
-    (state) => state.submissions
-  );
+  const { allSubmissions, fetchState, assignReviewersState, updateState } =
+    useAppSelector((state) => state.submissions);
   const { users } = useAppSelector((state) => state.user);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [assignReviewerDialogOpen, setAssignReviewerDialogOpen] =
     useState(false);
   const [selectedPaper, setSelectedPaper] =
@@ -80,6 +89,27 @@ const Papers = () => {
     }
   };
 
+  const handleStatusClick = (paper: Partial<Submission>) => {
+    if (!paper.id) return;
+    setSelectedPaper(paper);
+    setStatusDialogOpen(true);
+  };
+
+  const handleStatusSubmit = async (status: string) => {
+    if (!selectedPaper?.id) return;
+
+    try {
+      await dispatch(
+        editSubmissionStatus({
+          id: selectedPaper.id,
+          status,
+        })
+      ).unwrap();
+
+      dispatch(fetchAllSubmissions());
+    } catch (error) {}
+  };
+
   const handleAssignReviewer = (paper: Partial<Submission>) => {
     setSelectedPaper(paper);
     setAssignReviewerDialogOpen(true);
@@ -113,6 +143,15 @@ const Papers = () => {
         dispatch(fetchAllSubmissions());
       });
     }
+  };
+
+  // Function to check if status can be changed
+  const canChangeStatus = (paper: Partial<Submission>) => {
+    return (
+      paper.reviews?.comments &&
+      paper.reviews.comments.length > 0 &&
+      paper.status !== SubmissionStatus.inReview
+    );
   };
 
   const columns: GridColDef[] = [
@@ -192,13 +231,23 @@ const Papers = () => {
       headerName: "Reviewer(s)",
       flex: 1,
       headerClassName: "datagrid-header",
-      renderCell: (params) => {
+      renderCell: (params: GridRenderCellParams) => {
         const reviewers = params.value;
         const reviewerNames = Array.isArray(reviewers)
           ? reviewers.map((reviewer) => reviewer).join(", ")
           : "N/A";
 
-        return <>{reviewerNames}</>;
+        return (
+          <Typography
+            variant="body2"
+            style={{
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}
+          >
+            {reviewerNames}
+          </Typography>
+        );
       },
     },
     {
@@ -215,7 +264,7 @@ const Papers = () => {
     {
       field: "actions",
       headerName: "Action",
-      flex: 1,
+      flex: 1.2,
       headerAlign: "right",
       align: "right",
       headerClassName: "datagrid-header",
@@ -277,6 +326,35 @@ const Papers = () => {
               <AssignReviewerIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          <Tooltip
+            title={
+              canChangeStatus(params.row)
+                ? "Change Status"
+                : "Cannot change status until reviewed"
+            }
+          >
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => handleStatusClick(params.row)}
+                disabled={!canChangeStatus(params.row)}
+                sx={{
+                  color: (theme) =>
+                    canChangeStatus(params.row)
+                      ? theme.palette.success.main
+                      : theme.palette.action.disabled,
+                  "&:hover": {
+                    color: (theme) =>
+                      canChangeStatus(params.row)
+                        ? theme.palette.success.dark
+                        : theme.palette.action.disabled,
+                  },
+                }}
+              >
+                <ApproveIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Box>
       ),
     },
@@ -314,7 +392,11 @@ const Papers = () => {
           rows={allSubmissions}
           columns={columns}
           pageSizeOptions={[10, 25, 50]}
-          loading={fetchState === "loading"}
+          loading={
+            fetchState === State.loading ||
+            assignReviewersState === State.loading ||
+            updateState === State.loading
+          }
           initialState={{
             pagination: {
               paginationModel: { pageSize: 10 },
@@ -353,11 +435,20 @@ const Papers = () => {
         </>
       )}
       {selectedPaper && (
-        <ViewReviewDialog
-          open={reviewDialogOpen}
-          onClose={() => setReviewDialogOpen(false)}
-          paper={selectedPaper}
-        />
+        <>
+          <ViewReviewDialog
+            open={reviewDialogOpen}
+            onClose={() => setReviewDialogOpen(false)}
+            paper={selectedPaper}
+          />
+
+          <StatusDialog
+            open={statusDialogOpen}
+            onClose={() => setStatusDialogOpen(false)}
+            onSubmit={handleStatusSubmit}
+            paper={selectedPaper}
+          />
+        </>
       )}
     </Box>
   );

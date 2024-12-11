@@ -12,9 +12,10 @@ export interface Author {
 
 export interface Comment {
   reviewer: string;
-  submittedAt: string;
   comments: string;
-  fileUrl: string;
+  decision: string;
+  submittedAt: string;
+  fileUrl?: string;
 }
 
 export interface certificate {
@@ -26,7 +27,7 @@ export interface certificate {
 export interface Submission {
   id: string;
   title: string;
-  author: string; 
+  author: string;
   authors: Author[];
   type: string;
   status: string;
@@ -34,7 +35,9 @@ export interface Submission {
   createdAt?: string;
   updatedAt?: string;
   reviewers: string[];
-  reviews?: { comments: Comment[]; finalDecision: string | null };
+  reviews?: {
+    comments: Comment[];
+  };
   certificateUrls?: certificate[];
 }
 
@@ -45,7 +48,7 @@ interface SubmissionsState {
   fetchState: State;
   updateState: State;
   uploadState: State;
-  reUploadState:State;
+  reUploadState: State;
   stateMessage: string;
   assignReviewersState: State;
   getReviewsState: State;
@@ -59,7 +62,7 @@ const initialState: SubmissionsState = {
   fetchState: State.idle,
   updateState: State.idle,
   uploadState: State.idle,
-  reUploadState:State.idle,
+  reUploadState: State.idle,
   assignReviewersState: State.idle,
   getReviewsState: State.idle,
   stateMessage: "",
@@ -147,6 +150,37 @@ export const editSubmission = createAsyncThunk(
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? SnackMessage.error.updateSubmission
+                  : String(error.response?.data?.message),
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
+export const editSubmissionStatus = createAsyncThunk(
+  "submissions/editSubmissionStatus",
+  async (payload: { id: string; status: string }, { dispatch }) => {
+    return new Promise<any>((resolve, reject) => {
+      axiosInstance
+        .put(`/submissions/${payload.id}/status`, { status: payload.status })
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: SnackMessage.success.updateSubmissionStatus,
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.updateSubmissionStatus
                   : String(error.response?.data?.message),
               type: "error",
             })
@@ -408,6 +442,14 @@ const submissionsSlice = createSlice({
       .addCase(editSubmission.rejected, (state) => {
         state.updateState = State.failed;
         state.stateMessage = "Failed to update submission.";
+      })
+      .addCase(editSubmissionStatus.pending, (state) => {
+        state.updateState = State.loading;
+        state.stateMessage = "Updating submission status...";
+      })
+      .addCase(editSubmissionStatus.fulfilled, (state, action) => {
+        state.updateState = State.success;
+        state.stateMessage = "Submission status updated successfully.";
       })
 
       // create submission

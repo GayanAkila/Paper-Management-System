@@ -15,9 +15,10 @@ import {
   IconButton,
   Divider,
   Box,
+  Alert,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { Submission } from "../../../store/slices/submissionSlice";
+import { Submission, Comment } from "../../../store/slices/submissionSlice";
 import { useAppSelector } from "../../../store/store";
 
 interface ReviewDialogProps {
@@ -41,24 +42,48 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
   const [comment, setComment] = useState("");
   const [decision, setDecision] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string>("");
 
-  console.log(submission);
   useEffect(() => {
-    if (
-      submission &&
-      submission.reviews &&
-      user &&
-      submission.reviews.finalDecision
-    ) {
+    if (submission && submission.reviews && user) {
       const userReview = submission.reviews.comments.find(
         (review) => review.reviewer === user.email
       );
-      setComment(userReview ? userReview.comments : "");
-      setDecision(submission.reviews.finalDecision || "");
+      if (userReview) {
+        setComment(userReview.comments || "");
+        setDecision(userReview.decision || "");
+      }
     }
-
     setFile(null);
+    setFileError("");
   }, [open, submission, user]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    setFileError("");
+
+    if (selectedFile) {
+      // Check file type
+      const validTypes = [
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!validTypes.includes(selectedFile.type)) {
+        setFileError("Only .doc and .docx files are allowed");
+        setFile(null);
+        return;
+      }
+
+      // Check file size (5MB limit)
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setFileError("File size should be less than 5MB");
+        setFile(null);
+        return;
+      }
+
+      setFile(selectedFile);
+    }
+  };
 
   const handleSubmit = () => {
     onSubmit({
@@ -66,17 +91,19 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
       decision,
       file: file || undefined,
     });
-    setComment("");
-    setDecision("");
-    setFile(null);
-    onClose();
+    resetForm();
   };
 
   const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const resetForm = () => {
     setComment("");
     setDecision("");
     setFile(null);
-    onClose();
+    setFileError("");
   };
 
   return (
@@ -86,14 +113,13 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-
           p: 2,
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Submit Review
         </Typography>
-        <IconButton onClick={onClose} size="small">
+        <IconButton onClick={handleClose} size="small">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -127,19 +153,32 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
             fullWidth
           />
 
-          <Button variant="outlined" component="label" fullWidth>
-            Upload Review File (Optional)
-            <input
-              type="file"
-              hidden
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-          </Button>
-          {file && (
-            <Typography variant="body2" color="text.secondary">
-              Selected file: {file.name}
-            </Typography>
-          )}
+          <Box>
+            <Button
+              variant="outlined"
+              component="label"
+              fullWidth
+              sx={{ mb: fileError ? 1 : 0 }}
+            >
+              Upload Review File (Optional)
+              <input
+                type="file"
+                hidden
+                accept=".doc,.docx"
+                onChange={handleFileChange}
+              />
+            </Button>
+            {fileError && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {fileError}
+              </Alert>
+            )}
+            {file && !fileError && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Selected file: {file.name}
+              </Typography>
+            )}
+          </Box>
         </Stack>
         <Box
           sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 3 }}
@@ -150,7 +189,7 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!decision || !comment}
+            disabled={!decision || !comment || !!fileError}
           >
             Submit Review
           </Button>

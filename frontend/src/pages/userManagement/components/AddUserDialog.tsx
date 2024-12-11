@@ -26,7 +26,7 @@ interface AddUserDialogProps {
   onSubmit: (userData: {
     name: string;
     email: string;
-    type: "student" | "reviewer";
+    type: "student" | "reviewer" | "admin";
   }) => void;
 }
 
@@ -40,7 +40,7 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    type: "" as "student" | "reviewer",
+    type: "" as "student" | "reviewer" | "admin",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -81,7 +81,7 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
     setFormData({
       name: "",
       email: "",
-      type: "" as "student" | "reviewer",
+      type: "" as "student" | "reviewer" | "admin",
     });
     setErrors({});
     onClose();
@@ -161,14 +161,13 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
           />
 
           <FormControl error={!!errors.type}>
-            
             <FormLabel required>User Type</FormLabel>
             <RadioGroup
               value={formData.type}
               onChange={(e) => {
                 setFormData({
                   ...formData,
-                  type: e.target.value as "student" | "reviewer",
+                  type: e.target.value as "student" | "reviewer" | "admin",
                 });
                 if (errors.type) setErrors({ ...errors, type: undefined });
               }}
@@ -182,6 +181,11 @@ const AddUserDialog = ({ open, onClose, onSubmit }: AddUserDialogProps) => {
                 value="reviewer"
                 control={<Radio />}
                 label="Reviewer"
+              />
+              <FormControlLabel
+                value="admin"
+                control={<Radio />}
+                label="Admin"
               />
             </RadioGroup>
             {errors.type && (

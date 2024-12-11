@@ -106,6 +106,7 @@ const UserEditDialog = ({
             >
               <MenuItem value="student">Student</MenuItem>
               <MenuItem value="reviewer">Reviewer</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
             </Select>
           </FormControl>
 

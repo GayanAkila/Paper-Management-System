@@ -34,9 +34,11 @@ import UserEditDialog from "./components/UserEditDialog";
 import { LoadingButton } from "@mui/lab";
 import { appConfig, firebaseConfig } from "../../config/config";
 import { User } from "../../types/types";
+import { bgBG } from "@mui/material/locale";
 
 const Users = () => {
   const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth);
   const { users, loading } = useAppSelector((state) => state.user);
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -49,7 +51,7 @@ const Users = () => {
   }, []);
 
   const filteredUsers = useMemo(
-    () => users.filter((user) => user.role !== "admin"),
+    () => users.filter((user) => user.email === user.email),
     [users]
   );
 
@@ -70,7 +72,7 @@ const Users = () => {
   const handleAddUser = async (userData: {
     name: string;
     email: string;
-    type: "student" | "reviewer";
+    type: "student" | "reviewer" | "admin";
   }) => {
     await dispatch(
       addUser({
@@ -115,6 +117,11 @@ const Users = () => {
         bgcolor: "#E2F5FF",
         color: "#59A8D4",
         label: "Student",
+      },
+      admin: {
+        bgcolor: "#FEE9E1",
+        color: "#F97316",
+        label: "Admin",
       },
     };
 

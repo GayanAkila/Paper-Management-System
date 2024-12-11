@@ -71,7 +71,11 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type === "application/pdf") {
+      if (
+        selectedFile.type === "application/msword" ||
+        selectedFile.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
         setFile(selectedFile);
         setCurrentFileName(selectedFile.name);
         setErrors((prev) => ({ ...prev, file: "" }));
@@ -80,7 +84,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
         setCurrentFileName("");
         setErrors((prev) => ({
           ...prev,
-          file: "Please upload a PDF file only",
+          file: "Please upload a Word document (.doc or .docx)",
         }));
       }
     }
@@ -246,8 +250,8 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
           <Box>
             <Typography variant="subtitle2" gutterBottom>
               {mode === "edit"
-                ? "Update Paper (PDF only)"
-                : "Upload Paper (PDF only)"}
+                ? "Update Paper (Word document only)"
+                : "Upload Paper (Word document only)"}
             </Typography>
             {currentFileName && (
               <Alert severity="info" sx={{ mb: 2 }}>
@@ -255,7 +259,7 @@ const SubmissionDialog: React.FC<SubmissionDialogProps> = ({
               </Alert>
             )}
             <input
-              accept="application/pdf"
+              accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               id="file-upload"
               type="file"
               hidden

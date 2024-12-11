@@ -7,13 +7,18 @@ interface StatusChipProps {
 const StatusChip: React.FC<StatusChipProps> = ({ status }) => {
   const statusStyles = {
     "in review": {
-      bgcolor: "#E2F5FF",
-      color: "#59A8D4",
-      label: "Under Review",
-    },
-    submitted: {
       bgcolor: "#EEF2FF",
       color: "#818CF8",
+      label: "Under Review",
+    },
+    reviewed: {
+      bgcolor: "#E2F5FF",
+      color: "#59A8D4",
+      label: "Reviewed",
+    },
+    submitted: {
+      bgcolor: "#F3F4F6",
+      color: "#6B7280",
       label: "Submitted",
     },
     approved: {
@@ -29,9 +34,14 @@ const StatusChip: React.FC<StatusChipProps> = ({ status }) => {
     "needs revision": {
       bgcolor: "#FEF3C7",
       color: "#F59E0B",
-      label: "Approved with changes",
+      label: "Needs Revision",
     },
     Rejected: {
+      bgcolor: "#FEE2E2",
+      color: "#EF4444",
+      label: "Rejected",
+    },
+    rejected: {
       bgcolor: "#FEE2E2",
       color: "#EF4444",
       label: "Rejected",
@@ -40,6 +50,16 @@ const StatusChip: React.FC<StatusChipProps> = ({ status }) => {
       bgcolor: "#F3F4F6",
       color: "#6B7280",
       label: "Unknown",
+    },
+    "Not Reviewed": {
+      bgcolor: "#F3F4F6",
+      color: "#6B7280",
+      label: "Not Reviewed",
+    },
+    reject: {
+      bgcolor: "#FEE2E2",
+      color: "#EF4444",
+      label: "Reject",
     },
   };
 

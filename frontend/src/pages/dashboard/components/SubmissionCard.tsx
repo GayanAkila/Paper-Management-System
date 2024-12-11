@@ -34,6 +34,7 @@ import { Submission } from "../../../store/slices/submissionSlice";
 import { formatDate } from "../../../utils/utils";
 import StatusChip from "../../../components/StatusChip";
 import { useAppSelector } from "../../../store/store";
+import { SubmissionStatus } from "../../../types/types";
 
 interface SubmissionCardProps {
   submission: Submission;
@@ -286,7 +287,8 @@ const SubmissionCard = ({
             <Typography color="text.secondary" sx={{ width: 150 }}>
               Feedback
             </Typography>
-            {submission.reviews?.comments?.length ?? 0 > 0 ? (
+            {(submission.reviews?.comments?.length ?? 0 > 0) &&
+            submission.status !== SubmissionStatus.reviewed ? (
               <Link
                 component="button"
                 onClick={handleFeedbackClick}
@@ -306,7 +308,7 @@ const SubmissionCard = ({
               </Link>
             ) : (
               <Typography color="text.secondary" fontStyle="italic">
-                Not yet reviewed
+                Not Avaliable Yet
               </Typography>
             )}
           </Box>

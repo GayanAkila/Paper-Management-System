@@ -41,14 +41,18 @@ const ResubmitDialog: React.FC<ResubmitDialogProps> = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type === "application/pdf") {
+      if (
+        selectedFile.type === "application/msword" ||
+        selectedFile.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
         setFile(selectedFile);
         setCurrentFileName(selectedFile.name);
         setErrors({});
       } else {
         setFile(null);
         setCurrentFileName("");
-        setErrors({ file: "Please upload a PDF file only" });
+        setErrors({ file: "Please upload a Word document (.doc or .docx)" });
       }
     }
     event.target.value = "";
@@ -93,7 +97,7 @@ const ResubmitDialog: React.FC<ResubmitDialogProps> = ({
         <Stack spacing={3} sx={{ mt: 2 }}>
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Upload Updated Paper (PDF only)
+              Upload Updated Paper (Word document only)
             </Typography>
             {currentFileName && (
               <Alert severity="info" sx={{ mb: 2 }}>
@@ -101,7 +105,7 @@ const ResubmitDialog: React.FC<ResubmitDialogProps> = ({
               </Alert>
             )}
             <input
-              accept="application/pdf"
+              accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               id="file-upload"
               type="file"
               hidden

@@ -1,14 +1,17 @@
+// src/store/slices/certificateSlice.ts
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axiosInstance from "../../services/axiosInstance";
+import axios, { HttpStatusCode } from "axios";
 import { enqueueSnackbarMessage } from "./commonSlice";
 import { State } from "../../types/types";
 import { SnackMessage } from "../../config/constant";
-import { HttpStatusCode } from "axios";
+import axiosInstance from "../../services/axiosInstance";
 
 interface CertificateUrl {
   name: string;
   email: string;
   certificateUrl: string;
+  certificateId: string;
 }
 
 interface CertificateState {
@@ -25,16 +28,27 @@ const initialState: CertificateState = {
   error: null,
 };
 
-export const generateCertificate = createAsyncThunk(
-  "certificates/generate",
-  async (submissionId: string, { dispatch }) => {
-    return new Promise<any>((resolve, reject) => {
+export const sendCertificateEmails = createAsyncThunk(
+  "certificates/process",
+  async (
+    {
+      submissionId,
+      certificateFiles,
+    }: {
+      submissionId: string;
+      certificateFiles: FormData;
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    return new Promise<string>((resolve, reject) => {
       axiosInstance
-        .post(`/certificates/${submissionId}`)
+        .post(`/certificates/${submissionId}`, certificateFiles, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
         .then((response) => {
           dispatch(
             enqueueSnackbarMessage({
-              message: SnackMessage.success.createSubmission,
+              message: SnackMessage.success.certificateSent,
               type: "success",
             })
           );
@@ -45,7 +59,7 @@ export const generateCertificate = createAsyncThunk(
             enqueueSnackbarMessage({
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.createSubmission
+                  ? SnackMessage.error.certificateSent
                   : String(error.response?.data?.message),
               type: "error",
             })
@@ -56,64 +70,33 @@ export const generateCertificate = createAsyncThunk(
   }
 );
 
-export const sendCertificateEmails = createAsyncThunk(
-  "certificates/sendEmails",
-  async (submissionId: string, { dispatch }) => {
-    try {
-      const response = await axiosInstance.post(
-        `/certificates/${submissionId}/send`
-      );
-      dispatch(
-        enqueueSnackbarMessage({
-          message: "Certificates sent successfully to authors",
-          type: "success",
-        })
-      );
-      return response.data;
-    } catch (error: any) {
-      dispatch(
-        enqueueSnackbarMessage({
-          message:
-            error.response?.data?.message || "Failed to send certificates",
-          type: "error",
-        })
-      );
-      throw error;
-    }
-  }
-);
-
 const certificateSlice = createSlice({
   name: "certificates",
   initialState,
-  reducers: {},
+  reducers: {
+    resetCertificateState: (state) => {
+      state.sendState = State.idle;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(generateCertificate.pending, (state) => {
-        state.generateState = State.loading;
-        state.error = null;
-      })
-      .addCase(generateCertificate.fulfilled, (state, action) => {
-        state.generateState = State.success;
-        state.certificateUrls = action.payload;
-        state.error = null;
-      })
-      .addCase(generateCertificate.rejected, (state, action) => {
-        state.generateState = State.failed;
-        state.error = action.error.message || "Failed to generate certificate";
-      })
+      // Send Certificates
       .addCase(sendCertificateEmails.pending, (state) => {
         state.sendState = State.loading;
         state.error = null;
       })
-      .addCase(sendCertificateEmails.fulfilled, (state) => {
+      .addCase(sendCertificateEmails.fulfilled, (state, action) => {
         state.sendState = State.success;
+        // state.certificateUrls = action.payload.certificateUrls;
       })
       .addCase(sendCertificateEmails.rejected, (state, action) => {
         state.sendState = State.failed;
-        state.error = action.error.message || "Failed to send certificates ";
+        state.error =
+          (action.payload as string) || "Failed to send certificates";
       });
   },
 });
 
+export const { resetCertificateState } = certificateSlice.actions;
 export default certificateSlice.reducer;
