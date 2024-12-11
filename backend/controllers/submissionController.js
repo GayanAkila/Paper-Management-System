@@ -147,6 +147,7 @@ exports.editSubmissionStatus = async (req, res) => {
   const allowedStatuses = [
     "submitted",
     "in review",
+    "reviewed",
     "approved",
     "needs revision",
     "rejected",
@@ -426,92 +427,125 @@ exports.assignReviewers = async (req, res) => {
 
 // @route   POST /api/v1/submissions/:id/review
 // @access  Private (Reviewer only)
-exports.submitReview = async (req, res) => {
-  const { id } = req.params;
-  const { comments, decision } = req.body;
+exports.submitReview = [
+ 
+  async (req, res) => {
+    const { id } = req.params;
+    const { comments, decision } = req.body;
+    const file = req.file;
+    console.log("req.body: ", req.body);
+    const allowedDecisions = ["approved", "needs revision", "rejected"];
 
-  const allowedDecisions = ["approve", "needs revision", "reject"];
-  console.log("req.body: ", req.body);
-
-  
-
-  if (!comments || !decision || !allowedDecisions.includes(decision)) {
-    return res.status(400).json({
-      message: `Invalid input. Comments are required and decision must be one of: ${allowedDecisions.join(
-        ", "
-      )}`,
-    });
-  }
-
-  try {
-    const submissionRef = db.collection("submissions").doc(id);
-    const submissionDoc = await submissionRef.get();
-
-    if (!submissionDoc.exists) {
-      return res.status(404).json({ message: "Submission not found." });
+    if (!comments || !decision || !allowedDecisions.includes(decision)) {
+      return res.status(400).json({
+        message: `Invalid input. Comments are required and decision must be one of: ${allowedDecisions.join(
+          ", "
+        )}`,
+      });
     }
 
-    const submission = submissionDoc.data();
-    console.log("req.user:", req.user);
-    console.log("submission.reviewers:", submission.reviewers);
+    try {
+      const submissionRef = db.collection("submissions").doc(id);
+      const submissionDoc = await submissionRef.get();
 
-    if (
-      !submission.reviewers ||
-      !submission.reviewers.includes(req.user.email)
-    ) {
-      return res
-        .status(403)
-        .json({ message: "You are not assigned to review this submission." });
-    }
+      if (!submissionDoc.exists) {
+        return res.status(404).json({ message: "Submission not found." });
+      }
 
-      // Remove existing review from same reviewer
+      const submission = submissionDoc.data();
+      console.log("req.user:", req.user);
+      console.log("submission.reviewers:", submission.reviewers);
+
+      if (
+        !submission.reviewers ||
+        !submission.reviewers.includes(req.user.email)
+      ) {
+        return res
+          .status(403)
+          .json({ message: "You are not assigned to review this submission." });
+      }
+
+      let fileUrl = null;
+      if (file) {
+        // Create temporary file path
+        const tempFilePath = path.join(
+          __dirname,
+          `../temp/${uuidv4()}_${file.originalname}`
+        );
+        fs.writeFileSync(tempFilePath, file.buffer);
+
+        // Upload to Google Drive
+        const response = await drive.files.create({
+          requestBody: {
+            name: `review_${uuidv4()}_${file.originalname}`,
+            mimeType: file.mimetype,
+          },
+          media: {
+            mimeType: file.mimetype,
+            body: fs.createReadStream(tempFilePath),
+          },
+        });
+
+        const fileId = response.data.id;
+
+        // Make file publicly accessible
+        await drive.permissions.create({
+          fileId: fileId,
+          requestBody: {
+            role: "reader",
+            type: "anyone",
+          },
+        });
+
+        // Get the file's web view link
+        const result = await drive.files.get({
+          fileId: fileId,
+          fields: "webViewLink, webContentLink",
+        });
+
+        fileUrl = result.data.webViewLink;
+
+        // Clean up temporary file
+        fs.unlinkSync(tempFilePath);
+      }
+
+      // Find the existing review by the same reviewer
       const updatedReviews = (submission.reviews?.comments || []).filter(
         (review) => review.reviewer !== req.user.email
       );
 
-    // await submissionRef.update({
-    //   reviews: admin.firestore.FieldValue.arrayUnion({
-    //     reviewer: req.user.email,
-    //     comments,
-    //     decision,
-    //     submittedAt: new Date().toISOString(),
-    //   }),
-    // });
+      const updatedData = {
+        'status': 'reviewed',
+        'reviews.comments': [...updatedReviews, {
+          reviewer: req.user.email,
+          comments,
+          decision,
+          submittedAt: new Date().toISOString(),
+          fileUrl: fileUrl, // Will be null if no file was uploaded
+        }],
+      }
 
-    
-    const updatedData = {
-      'reviews.comments': [...updatedReviews, {
-        reviewer: req.user.email,
-        comments,
-        submittedAt: new Date().toISOString()
-      }],
-      'reviews.finalDecision': decision
-    }
+   
 
+    // Update submission with the updated reviews array
     await submissionRef.update(updatedData);
 
-    switch(decision) {
-      case 'approve':
-        updatedData.status = 'approved';
-        break;
-      case 'needs revision':
-        updatedData.status = 'needs revision';
-        break;  
-      case 'reject':
-        updatedData.status = 'rejected';
-        break;
-    }
+      res.status(200).json({ 
+        message: "Review submitted successfully.", 
+        decision,
+        fileUrl 
+      });
 
-    await submissionRef.update(updatedData);
-    
-    res
-      .status(200)
-      .json({ message: "Review submitted successfully." });
-  } catch (error) {
-    console.error("Error submitting review:", error);
-    res.status(500).json({ message: "Failed to submit review." });
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      if (error.message.includes('.doc')) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to submit review." });
+      }
+    }
   }
-};
+];
 
 // @route   GET /api/v1/submissions/:id/reviews
 // @access  Private (Admin/Reviewer only)

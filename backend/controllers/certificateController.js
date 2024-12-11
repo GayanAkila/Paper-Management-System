@@ -283,3 +283,104 @@ exports.sendAppreciationLetter = async (req, res) => {
     });
   }
  };
+
+ // @desc    Upload certificate and send emails
+// @route   POST /api/v1/certificates/:id
+// @access  Private (Admin only)
+exports.handleCertificate = async (req, res) => {
+  const { id } = req.params;
+  const certificateFiles = req.files; // Array of files from multer
+
+  if (!certificateFiles || certificateFiles.length === 0) {
+    return res.status(400).json({ message: 'No certificate files provided.' });
+  }
+
+  try {
+    const submissionRef = db.collection('submissions').doc(id);
+    const submissionDoc = await submissionRef.get();
+
+    if (!submissionDoc.exists) {
+      return res.status(404).json({ message: 'Submission not found.' });
+    }
+
+    const submission = submissionDoc.data();
+
+    if (submission.status !== 'approved' && submission.status !== 'needs revision') {
+      return res.status(400).json({ 
+        message: 'Certificates can only be generated for approved submissions.' 
+      });
+    }
+
+    const certificateUrls = [];
+
+    // Process each certificate file
+    for (let i = 0; i < certificateFiles.length; i++) {
+      const file = certificateFiles[i];
+      const author = submission.authors[i];
+
+      if (!author) {
+        console.warn(`No author found for file index ${i}`);
+        continue;
+      }
+
+      // Upload to Firebase Storage
+      const certificateId = uuidv4();
+      const fileName = `certificates/certificate_${certificateId}.pdf`;
+      const storageFile = bucket.file(fileName);
+      
+      await storageFile.save(file.buffer, {
+        metadata: { contentType: 'application/pdf' }
+      });
+
+      // Make file public and get URL
+      await storageFile.makePublic();
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+      // Add to certificate URLs array
+      certificateUrls.push({
+        name: author.name,
+        email: author.email,
+        certificateUrl: publicUrl,
+        certificateId
+      });
+
+      // Send email to author
+      const emailData = {
+        email: author.email,
+        subject: 'Your Paper Certificate - BISSS',
+        message: `
+          Dear ${author.name},
+
+          Congratulations! Your paper "${submission.title}" has been approved.
+          Please find your certificate click here ${publicUrl}.
+
+          Best regards,
+          BISSS Team
+        `,
+       
+      };
+
+      await sendEmail(emailData);
+    }
+
+    // Update submission document
+    await submissionRef.update({
+      certificateUrls,
+      certificatesGeneratedAt: new Date(),
+      certificatesEmailed: true,
+      certificatesEmailedAt: new Date()
+    });
+
+    res.status(200).json({
+      message: 'Certificates uploaded and emails sent successfully.',
+      certificateUrls
+    });
+
+  } catch (error) {
+    console.error('Error processing certificates:', error);
+    res.status(500).json({ 
+      message: 'Failed to process certificates.',
+      error: error.message 
+    });
+  }
+};

@@ -29,7 +29,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/submissions', submissionRoutes);
 app.use('/api/v1/settings', settingRoutes);
-app.use('/api/v1', certificateRoutes);
+app.use('/api/v1/certificates', certificateRoutes);
 // Mount other routers
 
 // Error handler

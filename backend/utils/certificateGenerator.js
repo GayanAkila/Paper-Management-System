@@ -41,6 +41,7 @@ const generateCertificatePDF = async (templateData) => {
     const options = {
       format: 'A4',
       orientation: 'landscape',
+      dpi:300,	
       border: '0',
       type: 'pdf'
     };
