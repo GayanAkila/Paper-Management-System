@@ -362,7 +362,7 @@ export const addReviews = createAsyncThunk(
     return new Promise<string>((resolve, reject) => {
       axiosInstance
         .post(`/submissions/${payload.id}/review`, payload.reviews, {
-          // headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data" },
         })
         .then((response) => {
           dispatch(

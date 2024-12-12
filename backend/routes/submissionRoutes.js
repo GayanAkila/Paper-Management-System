@@ -47,7 +47,7 @@ router.post(
   assignReviewers
 );
 
-router.post("/:id/review", protect, restrictTo(["reviewer"]), submitReview);
+router.post("/:id/review", protect,upload.single("file"), restrictTo(["reviewer"]), submitReview);
 
 router.get(
   "/:id/reviews",

@@ -427,16 +427,16 @@ exports.assignReviewers = async (req, res) => {
 
 // @route   POST /api/v1/submissions/:id/review
 // @access  Private (Reviewer only)
-exports.submitReview = [
- 
+exports.submitReview = 
   async (req, res) => {
     const { id } = req.params;
-    const { comments, decision } = req.body;
+    const reviews = JSON.parse(req.body.reviews);
     const file = req.file;
+    console.log("file: ", file);
     console.log("req.body: ", req.body);
     const allowedDecisions = ["approved", "needs revision", "rejected"];
 
-    if (!comments || !decision || !allowedDecisions.includes(decision)) {
+    if (!reviews.comments || !reviews.decision || !allowedDecisions.includes(reviews.decision)) {
       return res.status(400).json({
         message: `Invalid input. Comments are required and decision must be one of: ${allowedDecisions.join(
           ", "
@@ -518,8 +518,8 @@ exports.submitReview = [
         'status': 'reviewed',
         'reviews.comments': [...updatedReviews, {
           reviewer: req.user.email,
-          comments,
-          decision,
+          comments : reviews.comments,
+          decision : reviews.decision,
           submittedAt: new Date().toISOString(),
           fileUrl: fileUrl, // Will be null if no file was uploaded
         }],
@@ -532,7 +532,7 @@ exports.submitReview = [
 
       res.status(200).json({ 
         message: "Review submitted successfully.", 
-        decision,
+        decision : reviews.decision,
         fileUrl 
       });
 
@@ -545,7 +545,7 @@ exports.submitReview = [
       }
     }
   }
-];
+
 
 // @route   GET /api/v1/submissions/:id/reviews
 // @access  Private (Admin/Reviewer only)

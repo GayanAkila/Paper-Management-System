@@ -24,11 +24,7 @@ import { useAppSelector } from "../../../store/store";
 interface ReviewDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (reviewData: {
-    comment: string;
-    decision: string;
-    file?: File;
-  }) => void;
+  onSubmit: (reviewData: Partial<Comment>, file?: File) => Promise<void>;
   submission: Submission;
 }
 
@@ -86,11 +82,13 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
   };
 
   const handleSubmit = () => {
-    onSubmit({
-      comment,
-      decision,
-      file: file || undefined,
-    });
+    onSubmit(
+      {
+        comments: comment,
+        decision,
+      },
+      file || undefined
+    );
     resetForm();
   };
 

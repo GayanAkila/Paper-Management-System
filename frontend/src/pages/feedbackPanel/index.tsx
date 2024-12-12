@@ -15,6 +15,7 @@ import {
   addReviews,
   fetchAllSubmissions,
   Submission,
+  Comment,
 } from "../../store/slices/submissionSlice";
 import { State } from "../../types/types";
 import StatusChip from "../../components/StatusChip";
@@ -96,18 +97,17 @@ const FeedbackPanel = () => {
     setReviewDialogOpen(true);
   }, []);
 
-  const handleReviewSubmit = async (reviewData: {
-    comment: string;
-    decision: string;
-    file?: File;
-  }) => {
+  const handleReviewSubmit = async (
+    reviewData: Partial<Comment>,
+    file?: File
+  ) => {
     if (!selectedSubmission?.id || !user?.email) return;
 
     const formData = new FormData();
-    formData.append("comments", reviewData.comment);
-    formData.append("decision", reviewData.decision);
-    if (reviewData.file) {
-      formData.append("file", reviewData.file);
+    formData.append("reviews", JSON.stringify(reviewData));
+    // formData.append("decision", JSON.stringify(reviewData.decision));
+    if (file) {
+      formData.append("file", file);
     }
 
     try {
