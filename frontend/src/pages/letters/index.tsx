@@ -1,84 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { Box, Typography, Chip, IconButton, Tooltip } from "@mui/material";
 import {
-  Box,
-  Typography,
-  Chip,
-  IconButton,
-  Tooltip,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
-import {
-  Download as DownloadIcon,
   Description as LetterIcon,
-  Email as EmailIcon,
   Preview as PreviewIcon,
-  Description,
 } from "@mui/icons-material";
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 import { useAppDispatch, useAppSelector } from "../../store/store";
-import {
-  generateAppreciationLetter,
-  sendAppreciationLetter,
-} from "../../store/slices/letterSlice";
+import { uploadAppreciationLetter } from "../../store/slices/letterSlice";
 import { fetchAllUsers } from "../../store/slices/userSlice";
 import { State } from "../../types/types";
-
-interface ViewLetterDialogProps {
-  open: boolean;
-  onClose: () => void;
-  letterUrl: string;
-  reviewerName: string;
-}
-
-const ViewLetterDialog: React.FC<ViewLetterDialogProps> = ({
-  open,
-  onClose,
-  letterUrl,
-  reviewerName,
-}) => (
-  <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-    <DialogTitle>
-      <Typography variant="h6" fontWeight={600}>
-        {reviewerName}'s Appreciation Letter
-      </Typography>
-    </DialogTitle>
-    <DialogContent>
-      <Box sx={{ mt: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={() => window.open(letterUrl, "_blank")}
-          startIcon={<Description />}
-          fullWidth
-          sx={{ textTransform: "none" }}
-        >
-          View Letter
-        </Button>
-      </Box>
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose} sx={{ textTransform: "none" }}>
-        Close
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
+import LetterPreview from "./components/LetterPreview";
 
 const Letters = () => {
   const dispatch = useAppDispatch();
   const { users } = useAppSelector((state) => state.user);
-  const { letterUrls, generateState, sendState } = useAppSelector(
-    (state) => state.letters
-  );
+  const { generateState } = useAppSelector((state) => state.letters);
 
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedReviewer, setSelectedReviewer] = useState<{
-    id: string;
-    name: string;
-  }>({ id: "", name: "" });
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedReviewer, setSelectedReviewer] = useState<any>(null);
 
   useEffect(() => {
     dispatch(fetchAllUsers());
@@ -86,22 +25,35 @@ const Letters = () => {
 
   const reviewers = users.filter((user) => user.role === "reviewer");
 
-  const handleGenerateLetter = async (reviewerId: string) => {
+  const handleSendLetter = async (pdfBlobs: Blob[]) => {
+    if (!selectedReviewer) return;
+
+    const formData = new FormData();
+    pdfBlobs.forEach((blob, index) => {
+      formData.append(
+        "letter",
+        new File([blob], `letter_${index}.pdf`, { type: "application/pdf" })
+      );
+    });
+
     try {
-      await dispatch(generateAppreciationLetter(reviewerId)).unwrap();
+      await dispatch(
+        uploadAppreciationLetter({
+          reviewerId: selectedReviewer.id,
+          letterFile: formData,
+        })
+      ).unwrap();
+
       dispatch(fetchAllUsers());
+      setPreviewOpen(false);
     } catch (error) {
-      console.error("Error generating letter:", error);
+      console.error("Error processing letter:", error);
     }
   };
 
-  const handleSendLetter = async (reviewerId: string) => {
-    try {
-      await dispatch(sendAppreciationLetter(reviewerId)).unwrap();
-      dispatch(fetchAllUsers());
-    } catch (error) {
-      console.error("Error sending letter:", error);
-    }
+  const handlePreviewLetter = (reviewer: any) => {
+    setSelectedReviewer(reviewer);
+    setPreviewOpen(true);
   };
 
   const columns: GridColDef[] = [
@@ -119,7 +71,7 @@ const Letters = () => {
     },
     {
       field: "letterEmailed",
-      headerName: "Send Status",
+      headerName: "Email Status",
       flex: 0.8,
       align: "center",
       headerAlign: "center",
@@ -128,68 +80,38 @@ const Letters = () => {
         <Chip
           label={params.value ? "Sent" : "Not Sent"}
           color={params.value ? "success" : "default"}
-          variant="outlined"
+          variant="filled"
           size="small"
+          sx={{ minWidth: 80 }}
         />
       ),
     },
     {
       field: "actions",
       headerName: "Actions",
-      flex: 1,
+      flex: 0.5,
       headerAlign: "right",
       align: "right",
       headerClassName: "datagrid-header",
       renderCell: (params) => {
-        const hasLetter = params.row.appreciationLetterUrl;
         const letterSent = params.row.letterEmailed;
 
         return (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {hasLetter ? (
-              <>
-                <Tooltip title="View Letter">
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setSelectedReviewer({
-                        id: params.row.id,
-                        name: params.row.name,
-                      });
-                      setViewDialogOpen(true);
-                    }}
-                  >
-                    <PreviewIcon />
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip title="Download Letter">
-                  <IconButton
-                    size="small"
-                    onClick={() =>
-                      window.open(params.row.appreciationLetterUrl, "_blank")
-                    }
-                  >
-                    <DownloadIcon />
-                  </IconButton>
-                </Tooltip>
-
-                {!letterSent && (
-                  <Tooltip title="Send Letter via Email">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleSendLetter(params.row.id)}
-                    >
-                      <EmailIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </>
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+            {letterSent ? (
+              <Tooltip title="View Letter">
+                <IconButton
+                  size="small"
+                  onClick={() => handlePreviewLetter(params.row)}
+                >
+                  <PreviewIcon />
+                </IconButton>
+              </Tooltip>
             ) : (
               <Tooltip title="Generate Letter">
                 <IconButton
                   size="small"
-                  onClick={() => handleGenerateLetter(params.row.id)}
+                  onClick={() => handlePreviewLetter(params.row)}
                   disabled={generateState === State.loading}
                 >
                   <LetterIcon />
@@ -227,9 +149,7 @@ const Letters = () => {
         <DataGrid
           rows={reviewers}
           columns={columns}
-          loading={
-            generateState === State.loading || sendState === State.loading
-          }
+          loading={generateState === State.loading}
           pageSizeOptions={[10, 25, 50]}
           initialState={{
             pagination: { paginationModel: { pageSize: 10 } },
@@ -247,12 +167,12 @@ const Letters = () => {
         />
       </Box>
 
-      {selectedReviewer.id && letterUrls[selectedReviewer.id] && (
-        <ViewLetterDialog
-          open={viewDialogOpen}
-          onClose={() => setViewDialogOpen(false)}
-          letterUrl={letterUrls[selectedReviewer.id]}
-          reviewerName={selectedReviewer.name}
+      {selectedReviewer && (
+        <LetterPreview
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          reviewerData={selectedReviewer}
+          handleSendLetter={handleSendLetter}
         />
       )}
     </Box>

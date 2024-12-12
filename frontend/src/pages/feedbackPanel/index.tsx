@@ -32,7 +32,7 @@ const FeedbackPanel = () => {
 
   const renderUserReviewDecision = (params: GridRenderCellParams) => {
     if (!user || !params.value) {
-      return "";
+      return <StatusChip status={"Not Reviewed"} />;
     }
 
     const reviews = Array.isArray(params.value.comments)
@@ -161,7 +161,7 @@ const FeedbackPanel = () => {
     },
     {
       field: "reviews",
-      headerName: "Review Status",
+      headerName: "Decision",
       headerAlign: "center",
       align: "center",
       flex: 1,

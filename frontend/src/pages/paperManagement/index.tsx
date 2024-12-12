@@ -229,7 +229,7 @@ const Papers = () => {
     {
       field: "reviewers",
       headerName: "Reviewer(s)",
-      flex: 1,
+      flex: 1.5,
       headerClassName: "datagrid-header",
       renderCell: (params: GridRenderCellParams) => {
         const reviewers = params.value;
@@ -255,7 +255,7 @@ const Papers = () => {
       headerName: "Status",
       align: "center",
       headerAlign: "center",
-      flex: 0.8,
+      flex: 1,
       headerClassName: "datagrid-header",
       renderCell: (params) => {
         return <StatusChip status={params.value} />;
@@ -264,7 +264,7 @@ const Papers = () => {
     {
       field: "actions",
       headerName: "Action",
-      flex: 1.2,
+      flex: 1.5,
       headerAlign: "right",
       align: "right",
       headerClassName: "datagrid-header",

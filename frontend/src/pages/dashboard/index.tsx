@@ -138,7 +138,7 @@ const Dashboard = () => {
             }}
             sx={{ borderRadius: 1 }}
           >
-            Upload the file
+            Submit a Paper
           </LoadingButton>
         </Tooltip>
       </Box>

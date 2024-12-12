@@ -328,9 +328,9 @@ const AuthenticatedLayout = () => {
           sx={{
             flexGrow: 1,
             height: "100%",
-            width: "100vw",
+            // width: "100vw",
             p: 3,
-            overflow: "auto",
+            overflow: "hidden",
           }}
         >
           <Box
@@ -343,6 +343,18 @@ const AuthenticatedLayout = () => {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
+              // Add custom scrollbar styling
+              "&::-webkit-scrollbar": {
+                width: 8,
+                height: 8,
+              },
+              "&::-webkit-scrollbar-track": {
+                backgroundColor: "#f1f1f1",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#888",
+                borderRadius: 4,
+              },
             }}
           >
             <Outlet />

@@ -13,7 +13,6 @@ import { State, SubmissionStatus } from "../../types/types";
 import ViewCertificatesDialog from "./components/ViewCertificatesDialog";
 import { enqueueSnackbarMessage } from "../../store/slices/commonSlice";
 import CertificatePreview from "./components/CertificatePreview";
-import "./components/CertificatePreview.css";
 
 const Certificates = () => {
   const dispatch = useAppDispatch();
@@ -68,21 +67,8 @@ const Certificates = () => {
 
       dispatch(fetchAllSubmissions());
       setPreviewOpen(false);
-
-      dispatch(
-        enqueueSnackbarMessage({
-          message: "Certificates generated and sent successfully",
-          type: "success",
-        })
-      );
     } catch (error) {
       console.error("Error processing certificates:", error);
-      dispatch(
-        enqueueSnackbarMessage({
-          message: "Failed to process certificates",
-          type: "error",
-        })
-      );
     }
   };
 
@@ -164,7 +150,16 @@ const Certificates = () => {
         const certificatesSent = submission.certificatesEmailed;
 
         return (
-          <Box sx={{ display: "flex", gap: 0.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 0.5,
+              alignContent: "center",
+              alignItems: "center",
+
+              justifyContent: "flex-end",
+            }}
+          >
             {certificatesSent ? (
               // If certificates are sent, show preview icon
               <Tooltip title="View Certificates">
@@ -175,7 +170,9 @@ const Certificates = () => {
                     setViewDialogOpen(true);
                   }}
                 >
-                  <PreviewIcon />
+                  <PreviewIcon
+                    sx={{ color: (theme) => theme.palette.background.icon }}
+                  />
                 </IconButton>
               </Tooltip>
             ) : (
@@ -185,7 +182,9 @@ const Certificates = () => {
                   size="small"
                   onClick={() => handlePreviewCertificate(submission)}
                 >
-                  <CertificateIcon />
+                  <CertificateIcon
+                    sx={{ color: (theme) => theme.palette.background.icon }}
+                  />
                 </IconButton>
               </Tooltip>
             )}
@@ -214,6 +213,10 @@ const Certificates = () => {
             backgroundColor: "#fff",
             color: "#64748B",
             fontWeight: 600,
+          },
+          "& .MuiDataGrid-cell": {
+            display: "flex",
+            alignItems: "center",
           },
         }}
       >
