@@ -384,3 +384,92 @@ exports.handleCertificate = async (req, res) => {
     });
   }
 };
+
+// @desc    Upload appreciation letter and send email
+// @route   POST /api/v1/appreciation-letters/:reviewerId
+// @access  Private (Admin only)
+exports.handleAppreciationLetter = async (req, res) => {
+  const { reviewerId } = req.params;
+  const letterFile = req.files?.[0]; // Get first file from multer
+
+  if (!letterFile) {
+    return res.status(400).json({ message: 'No appreciation letter file provided.' });
+  }
+
+  try {
+    const reviewerRef = db.collection('users').doc(reviewerId);
+    const reviewerDoc = await reviewerRef.get();
+
+    if (!reviewerDoc.exists) {
+      return res.status(404).json({ message: 'Reviewer not found.' });
+    }
+
+    const reviewer = reviewerDoc.data();
+
+    // Fetch all submissions reviewed by this reviewer
+    const submissionsSnapshot = await db
+      .collection('submissions')
+      .where('reviews', 'array-contains', { reviewer: reviewer.email })
+      .get();
+
+    if (submissionsSnapshot.empty) {
+      return res.status(404).json({ message: 'No reviews found for this reviewer.' });
+    }
+
+    // Upload to Firebase Storage
+    const letterId = uuidv4();
+    const fileName = `appreciation_letters/letter_${letterId}.pdf`;
+    const storageFile = bucket.file(fileName);
+    
+    await storageFile.save(letterFile.buffer, {
+      metadata: { contentType: 'application/pdf' }
+    });
+
+    // Make file public and get URL
+    await storageFile.makePublic();
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+    // Send email to reviewer
+    const emailData = {
+      email: reviewer.email,
+      subject: 'Appreciation Letter - BISSS',
+      message: `
+        Dear ${reviewer.name},
+
+        Thank you for your valuable contributions as a reviewer for the Business Information System Student Symposium (BISSS).
+        Please find your appreciation letter click here ${publicUrl}.
+
+        Best regards,
+        BISSS Team
+      `,
+    };
+
+    await sendEmail(emailData);
+
+    // Update reviewer document with letter information
+    await reviewerRef.update({
+      appreciationLetterUrl: publicUrl,
+      letterId,
+      letterGeneratedAt: new Date(),
+      letterEmailed: true,
+      letterEmailedAt: new Date(),
+      reviewedSubmissions: submissionsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        title: doc.data().title,
+        type: doc.data().type
+      }))
+    });
+
+    res.status(200).json({
+      message: 'Appreciation letter uploaded and email sent successfully.',
+      letterUrl: publicUrl
+    });
+
+  } catch (error) {
+    console.error('Error processing appreciation letter:', error);
+    res.status(500).json({ 
+      message: 'Failed to process appreciation letter.',
+      error: error.message 
+    });
+  }
+};

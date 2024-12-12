@@ -4,6 +4,7 @@ const {
   sendCertificatesEmail,
   generateAppreciationLetter,
   generateCertificates,
+  handleAppreciationLetter,
   sendAppreciationLetter,
   handleCertificate
 } = require("../controllers/certificateController");
@@ -35,6 +36,8 @@ router.post(
 router.post('/:id/send', protect, restrictTo(['admin']), sendCertificatesEmail);
 
 router.post('/:id', upload.array('certificates'), protect, restrictTo(['admin']), handleCertificate);
+
+router.post('/appreciation-letters/:reviewerId', protect, restrictTo(['admin']), handleAppreciationLetter);
 
 router.post('/appreciation-letters/:reviewerId/send', protect, restrictTo(['admin']), sendAppreciationLetter);
 
