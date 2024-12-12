@@ -148,7 +148,7 @@ const Users = () => {
     {
       field: "id",
       headerName: "User ID",
-      flex: 2,
+      flex: 1,
       headerClassName: "datagrid-header",
     },
     {

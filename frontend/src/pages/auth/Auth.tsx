@@ -10,6 +10,8 @@ import {
   Divider,
   CircularProgress,
   Alert,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import EmailIcon from "@mui/icons-material/Email";
@@ -19,6 +21,7 @@ import { login } from "../../store/slices/authSlice";
 import { registerUser, loginUser } from "../../services/authService";
 import { signInWithGoogle } from "../../services/firebase";
 import { UserProfile } from "../../types/types";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 interface FormData {
   name: string;
@@ -46,6 +49,18 @@ const Auth = () => {
     confirmPassword: "",
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleMouseDownPassword = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    event.preventDefault();
+  };
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -253,7 +268,7 @@ const Auth = () => {
             />
 
             <TextField
-              type="password"
+              type={showPassword ? "text" : "password"}
               label="Password"
               name="password"
               value={formData.password}
@@ -262,11 +277,25 @@ const Auth = () => {
               helperText={formErrors.password}
               disabled={loading}
               fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             {authType === "sign-up" && (
               <TextField
-                type="password"
+                type={showPassword ? "text" : "password"}
                 label="Confirm Password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
@@ -275,6 +304,20 @@ const Auth = () => {
                 helperText={formErrors.confirmPassword}
                 disabled={loading}
                 fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        onMouseDown={handleMouseDownPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             )}
 

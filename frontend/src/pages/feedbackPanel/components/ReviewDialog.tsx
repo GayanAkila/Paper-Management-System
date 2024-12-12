@@ -137,7 +137,7 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
               onChange={(e) => setDecision(e.target.value)}
               label="Decision"
             >
-              <MenuItem value="approve">Approve</MenuItem>
+              <MenuItem value="approved">Approve</MenuItem>
               <MenuItem value="needs revision">Needs Revision</MenuItem>
               <MenuItem value="reject">Reject</MenuItem>
             </Select>
