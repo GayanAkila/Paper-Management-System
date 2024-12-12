@@ -20,6 +20,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { Submission, Comment } from "../../../store/slices/submissionSlice";
 import { useAppSelector } from "../../../store/store";
+import { LoadingButton } from "@mui/lab";
 
 interface ReviewDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
   submission,
 }) => {
   const { user } = useAppSelector((state) => state.auth);
+  const { updateState } = useAppSelector((state) => state.submissions);
   const [comment, setComment] = useState("");
   const [decision, setDecision] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -184,13 +186,14 @@ const ReviewDialog: React.FC<ReviewDialogProps> = ({
           <Button onClick={handleClose} variant="outlined">
             Cancel
           </Button>
-          <Button
+          <LoadingButton
             onClick={handleSubmit}
+            loading={updateState === "loading"}
             variant="contained"
             disabled={!decision || !comment || !!fileError}
           >
             Submit Review
-          </Button>
+          </LoadingButton>
         </Box>
       </DialogContent>
     </Dialog>

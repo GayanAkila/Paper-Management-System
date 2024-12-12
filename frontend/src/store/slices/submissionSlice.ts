@@ -534,7 +534,20 @@ const submissionsSlice = createSlice({
       .addCase(reSubmission.rejected, (state) => {
         state.reUploadState = State.failed;
         state.stateMessage = "Failed to resubmit.";
+      })
+      .addCase(addReviews.pending, (state) => {
+        state.updateState = State.loading;
+        state.stateMessage = "Adding reviews...";
+      })
+      .addCase(addReviews.fulfilled, (state) => {
+        state.updateState = State.success;
+        state.stateMessage = "Reviews added successfully.";
+      })
+      .addCase(addReviews.rejected, (state) => {
+        state.updateState = State.failed;
+        state.stateMessage = "Failed to add reviews.";
       });
+      
   },
 });
 

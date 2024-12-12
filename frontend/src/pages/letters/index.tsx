@@ -31,7 +31,7 @@ const Letters = () => {
     const formData = new FormData();
     pdfBlobs.forEach((blob, index) => {
       formData.append(
-        "letter",
+        "file",
         new File([blob], `letter_${index}.pdf`, { type: "application/pdf" })
       );
     });
@@ -40,7 +40,7 @@ const Letters = () => {
       await dispatch(
         uploadAppreciationLetter({
           reviewerId: selectedReviewer.id,
-          letterFile: formData,
+          file: formData,
         })
       ).unwrap();
 
@@ -97,14 +97,25 @@ const Letters = () => {
         const letterSent = params.row.letterEmailed;
 
         return (
-          <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 0.5,
+              alignContent: "center",
+              alignItems: "center",
+
+              justifyContent: "flex-end",
+            }}
+          >
             {letterSent ? (
               <Tooltip title="View Letter">
                 <IconButton
                   size="small"
                   onClick={() => handlePreviewLetter(params.row)}
                 >
-                  <PreviewIcon />
+                  <PreviewIcon
+                    sx={{ color: (theme) => theme.palette.background.icon }}
+                  />
                 </IconButton>
               </Tooltip>
             ) : (
@@ -114,7 +125,9 @@ const Letters = () => {
                   onClick={() => handlePreviewLetter(params.row)}
                   disabled={generateState === State.loading}
                 >
-                  <LetterIcon />
+                  <LetterIcon
+                    sx={{ color: (theme) => theme.palette.background.icon }}
+                  />
                 </IconButton>
               </Tooltip>
             )}
@@ -143,6 +156,10 @@ const Letters = () => {
             backgroundColor: "#fff",
             color: "#64748B",
             fontWeight: 600,
+          },
+          "& .MuiDataGrid-cell": {
+            display: "flex",
+            alignItems: "center",
           },
         }}
       >

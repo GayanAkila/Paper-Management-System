@@ -11,6 +11,8 @@ import {
 import { PDFViewer } from "@react-pdf/renderer";
 import AppreciationLetter from "./AppreciationLetter";
 import logo from "../../../assets/images/logo.png";
+import { LoadingButton } from "@mui/lab";
+import { useAppSelector } from "../../../store/store";
 
 interface PreviewLetterProps {
   open: boolean;
@@ -25,6 +27,8 @@ const LetterPreview: React.FC<PreviewLetterProps> = ({
   reviewerData,
   handleSendLetter,
 }) => {
+  const { generateState } = useAppSelector((state) => state.letters);
+
   const generatePDF = async () => {
     const { pdf } = await import("@react-pdf/renderer");
     const letterDoc = (
@@ -68,9 +72,14 @@ const LetterPreview: React.FC<PreviewLetterProps> = ({
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" color="primary" onClick={generatePDF}>
+        <LoadingButton
+          variant="contained"
+          color="primary"
+          onClick={generatePDF}
+          loading={generateState === "loading"}
+        >
           Generate & Send Letter
-        </Button>
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );

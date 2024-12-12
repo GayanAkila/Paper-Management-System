@@ -63,11 +63,11 @@ const FeedbackPanel = () => {
           }
           variant="outlined"
         /> */}
-        {hasAttachment && (
+        {/* {hasAttachment && (
           <Tooltip title="Review includes attachment">
             <DescriptionIcon fontSize="small" color="action" />
           </Tooltip>
-        )}
+        )} */}
       </Box>
     );
   };

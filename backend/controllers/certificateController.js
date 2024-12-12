@@ -97,72 +97,72 @@ exports.generateCertificates = async (req, res) => {
 // @desc    Generate and send appreciation letters for reviewers
 // @route   POST /api/v1/appreciation-letters/:reviewerId
 // @access  Private (Admin only)
-exports.generateAppreciationLetter = async (req, res) => {
-  const { reviewerId } = req.params;
+// exports.generateAppreciationLetter = async (req, res) => {
+//   const { reviewerId } = req.params;
 
-  try {
-    const reviewerRef = db.collection('users').doc(reviewerId);
-    const reviewerDoc = await reviewerRef.get();
+//   try {
+//     const reviewerRef = db.collection('users').doc(reviewerId);
+//     const reviewerDoc = await reviewerRef.get();
 
-    if (!reviewerDoc.exists) {
-      return res.status(404).json({ message: 'Reviewer not found.' });
-    }
+//     if (!reviewerDoc.exists) {
+//       return res.status(404).json({ message: 'Reviewer not found.' });
+//     }
 
-    const reviewer = reviewerDoc.data();
-    console.log(reviewer.email);
-    // Fetch all submissions reviewed by the reviewer
-    const submissionsSnapshot = await db
-      .collection('submissions')
-      .where('reviews', 'array-contains', { reviewer: reviewer.email })
-      .get();
-    console.log(`Found ${submissionsSnapshot.size} reviews for reviewer: ${reviewerId}`);
-    if (submissionsSnapshot.empty) {
-      return res.status(404).json({ message: 'No reviews found for this reviewer.' });
-    }
+//     const reviewer = reviewerDoc.data();
+//     console.log(reviewer.email);
+//     // Fetch all submissions reviewed by the reviewer
+//     const submissionsSnapshot = await db
+//       .collection('submissions')
+//       .where('reviews', 'array-contains', { reviewer: reviewer.email })
+//       .get();
+//     console.log(`Found ${submissionsSnapshot.size} reviews for reviewer: ${reviewerId}`);
+//     if (submissionsSnapshot.empty) {
+//       return res.status(404).json({ message: 'No reviews found for this reviewer.' });
+//     }
 
-    const reviewedSubmissions = [];
-    submissionsSnapshot.forEach((doc) => reviewedSubmissions.push(doc.data()));
+//     const reviewedSubmissions = [];
+//     submissionsSnapshot.forEach((doc) => reviewedSubmissions.push(doc.data()));
 
-    // Generate appreciation letter PDF
-    const doc = new PDFDocument();
-    const filePath = path.join(__dirname, `../temp/appreciation_letter_${reviewerId}.pdf`);
-    const writeStream = fs.createWriteStream(filePath);
-    doc.pipe(writeStream);
+//     // Generate appreciation letter PDF
+//     const doc = new PDFDocument();
+//     const filePath = path.join(__dirname, `../temp/appreciation_letter_${reviewerId}.pdf`);
+//     const writeStream = fs.createWriteStream(filePath);
+//     doc.pipe(writeStream);
 
-    // Add letter content
-    doc
-      .fontSize(20)
-      .text('Appreciation Letter', { align: 'center' })
-      .moveDown()
-      .fontSize(14)
-      .text(`Dear ${reviewer.name},`, { align: 'left' })
-      .moveDown()
-      .text('We sincerely appreciate your valuable contributions as a reviewer.', { align: 'left' })
-      .text('You have reviewed the following submissions:', { align: 'left' })
-      .moveDown();
+//     // Add letter content
+//     doc
+//       .fontSize(20)
+//       .text('Appreciation Letter', { align: 'center' })
+//       .moveDown()
+//       .fontSize(14)
+//       .text(`Dear ${reviewer.name},`, { align: 'left' })
+//       .moveDown()
+//       .text('We sincerely appreciate your valuable contributions as a reviewer.', { align: 'left' })
+//       .text('You have reviewed the following submissions:', { align: 'left' })
+//       .moveDown();
 
-    reviewedSubmissions.forEach((submission, index) => {
-      doc.text(`${index + 1}. ${submission.title} (${submission.type})`, { align: 'left' });
-    });
+//     reviewedSubmissions.forEach((submission, index) => {
+//       doc.text(`${index + 1}. ${submission.title} (${submission.type})`, { align: 'left' });
+//     });
 
-    doc.end();
+//     doc.end();
 
-    // Wait for the file to finish writing
-    writeStream.on('finish', async () => {
-      // Save the appreciation letter file URL in Firestore
-      await db.collection('users').doc(reviewerId).update({
-        appreciationLetterUrl: `https://your-storage-service/appreciation_letters/appreciation_letter_${reviewerId}.pdf`,
-      });
+//     // Wait for the file to finish writing
+//     writeStream.on('finish', async () => {
+//       // Save the appreciation letter file URL in Firestore
+//       await db.collection('users').doc(reviewerId).update({
+//         appreciationLetterUrl: `https://your-storage-service/appreciation_letters/appreciation_letter_${reviewerId}.pdf`,
+//       });
 
-      // Optionally, send the letter via email (email service required)
-      console.log(`Appreciation letter generated and saved for reviewer: ${reviewerId}`);
-      res.status(200).json({ message: 'Appreciation letter generated successfully.' });
-    });
-  } catch (error) {
-    console.error('Error generating appreciation letter:', error);
-    res.status(500).json({ message: 'Failed to generate appreciation letter.' });
-  }
-};
+//       // Optionally, send the letter via email (email service required)
+//       console.log(`Appreciation letter generated and saved for reviewer: ${reviewerId}`);
+//       res.status(200).json({ message: 'Appreciation letter generated successfully.' });
+//     });
+//   } catch (error) {
+//     console.error('Error generating appreciation letter:', error);
+//     res.status(500).json({ message: 'Failed to generate appreciation letter.' });
+//   }
+// };
 
 
 
@@ -390,7 +390,7 @@ exports.handleCertificate = async (req, res) => {
 // @access  Private (Admin only)
 exports.handleAppreciationLetter = async (req, res) => {
   const { reviewerId } = req.params;
-  const letterFile = req.files?.[0]; // Get first file from multer
+  const letterFile = req.file; 
 
   if (!letterFile) {
     return res.status(400).json({ message: 'No appreciation letter file provided.' });
@@ -407,14 +407,14 @@ exports.handleAppreciationLetter = async (req, res) => {
     const reviewer = reviewerDoc.data();
 
     // Fetch all submissions reviewed by this reviewer
-    const submissionsSnapshot = await db
-      .collection('submissions')
-      .where('reviews', 'array-contains', { reviewer: reviewer.email })
-      .get();
+    // const submissionsSnapshot = await db
+    //   .collection('submissions')
+    //   .where('reviews', 'array-contains', { reviewer: reviewer.email })
+    //   .get();
 
-    if (submissionsSnapshot.empty) {
-      return res.status(404).json({ message: 'No reviews found for this reviewer.' });
-    }
+    // if (submissionsSnapshot.empty) {
+    //   return res.status(404).json({ message: 'No reviews found for this reviewer.' });
+    // }
 
     // Upload to Firebase Storage
     const letterId = uuidv4();
@@ -453,11 +453,11 @@ exports.handleAppreciationLetter = async (req, res) => {
       letterGeneratedAt: new Date(),
       letterEmailed: true,
       letterEmailedAt: new Date(),
-      reviewedSubmissions: submissionsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        title: doc.data().title,
-        type: doc.data().type
-      }))
+      // reviewedSubmissions: submissionsSnapshot.docs.map(doc => ({
+      //   id: doc.id,
+      //   title: doc.data().title,
+      //   type: doc.data().type
+      // }))
     });
 
     res.status(200).json({

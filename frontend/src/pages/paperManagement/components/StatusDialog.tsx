@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Submission } from "../../../store/slices/submissionSlice";
+import StatusChip from "../../../components/StatusChip";
 
 interface StatusDialogProps {
   open: boolean;
@@ -53,7 +54,7 @@ const StatusDialog: React.FC<StatusDialogProps> = ({
           p: 2,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" sx={{ fontWeight: 500 }}>
           Change Submission Status
         </Typography>
         <IconButton onClick={handleClose} size="small">
@@ -62,12 +63,14 @@ const StatusDialog: React.FC<StatusDialogProps> = ({
       </DialogTitle>
       <Divider />
       <DialogContent>
-        <Box sx={{ my: 2 }}>
+        <Box>
           <Typography sx={{ mb: 2 }}>
             <strong>Paper:</strong> {paper?.title}
           </Typography>
-          <Typography sx={{ mb: 3, color: "text.secondary" }}>
-            <strong>Current Status:</strong> {paper?.status}
+          <Typography sx={{ mb: 3 }}>
+            <strong>Current Status:{"  "}</strong>
+
+            <StatusChip status={paper?.status || "submiited"} />
           </Typography>
           <FormControl fullWidth required>
             <InputLabel>New Status</InputLabel>
@@ -83,7 +86,7 @@ const StatusDialog: React.FC<StatusDialogProps> = ({
           </FormControl>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={handleClose} variant="outlined">
           Cancel
         </Button>
